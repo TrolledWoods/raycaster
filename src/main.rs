@@ -81,18 +81,37 @@ fn main() {
 		for x in 0..WIDTH {
 			let fx = (x as f32 / WIDTH as f32 - 0.5);
 
-			match raycast(Raycast {
-				x: player_x,
-				y: player_y,
-				dx: dx + dy * fx,
-				dy: dy - dx * fx,
-				.. Default::default()
-			}, |x, y| match *world.as_slice().iget(y)?.iget(x)? == b'#' { true => Some(()), false => None }) {
+			let cast_result = raycast(Raycast {
+					x: player_x,
+					y: player_y,
+					dx: dx + dy * fx,
+					dy: dy - dx * fx,
+					.. Default::default()
+				},
+				|x, y| if
+					x >= 0 && y >= 0 &&
+					(y as usize) < world.len() && (x as usize) < world[0].len()
+				{
+					if world[y as usize][x as usize] == b'#' {
+						Some(())
+					} else {
+						None
+					}
+				} else {
+					None
+				},
+			);
+
+			match cast_result {
 				Some((dist, ())) => {
 					for y in 0..HEIGHT {
 						let fy = 2.0 * (y as f32 / HEIGHT as f32 - 0.5).abs();
 
-						buffer[y * WIDTH + x] = if fy < 1.0 / (1.0 + dist) { ((1.0 / (1.0 + dist)) * 256.0) as u32 } else { 0 };
+						buffer[y * WIDTH + x] = if fy < 1.0 / dist {
+							((1.0 / (dist * dist * 0.25)).min(1.0) * 255.0) as u32
+						} else {
+							0
+						};
 					}
 				}
 				None => for y in 0..HEIGHT {
@@ -101,17 +120,17 @@ fn main() {
 			}
 		}
 
-        window
-            .update_with_buffer(&buffer, WIDTH, HEIGHT)
-            .unwrap();
-
 		last_frame_time = instant.elapsed().as_secs_f32();
 		frame_rate[frame_rate_index] = last_frame_time;
 		frame_rate_index += 1;
 		if frame_rate_index >= frame_rate.len() {
 			frame_rate_index = 0;
 			let average: f32 = frame_rate.iter().sum::<f32>() / frame_rate.len() as f32;
-			println!("{} seconds / {} fps", average, 1.0 / average);
+			println!("{} seconds / {} fps (if no fps cap was applied)", average, 1.0 / average);
 		}
+
+        window
+            .update_with_buffer(&buffer, WIDTH, HEIGHT)
+            .unwrap();
     }
 }

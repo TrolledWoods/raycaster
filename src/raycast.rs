@@ -20,20 +20,46 @@ impl Default for Raycast {
 }
 
 pub fn raycast<Hit>(
-	mut cast: Raycast,
+	cast: Raycast,
 	mut data: impl FnMut(isize, isize) -> Option<Hit>,
 ) -> Option<(f32, Hit)> {
-	let mut distance = 0.0;
-	let step_size = 0.1;
+	let mut total = 0.0;
 
-	while distance < cast.max_distance {
-		if let Some(hit) = data(cast.x.floor() as isize, cast.y.floor() as isize) {
-			return Some((distance, hit));
+	let mut ix = cast.x.floor() as isize;
+	let mut iy = cast.y.floor() as isize;
+
+	let mut x_remaining = if cast.dx.abs() < 0.000001 {
+		100000000000000000.0f32
+	} else if cast.dx > 0.0 {
+		(1.0 - (cast.x - cast.x.floor())) / cast.dx
+	} else {
+		(cast.x - cast.x.floor()) / -cast.dx
+	};
+
+	let mut y_remaining = if cast.dy.abs() < 0.000001 {
+		10000000000000000.0f32
+	} else if cast.dy > 0.0 {
+		(1.0 - (cast.y - cast.y.floor())) / cast.dy
+	} else {
+		(cast.y - cast.y.floor()) / -cast.dy
+	};
+
+	while total < cast.max_distance {
+		if let Some(hit) = data(ix, iy) {
+			return Some((total, hit));
 		}
 
-		cast.x += cast.dx * step_size;
-		cast.y += cast.dy * step_size;
-		distance += step_size;
+		if x_remaining < y_remaining {
+			total += x_remaining;
+			y_remaining -= x_remaining;
+			x_remaining = 1.0 / cast.dx.abs().max(0.05);
+			ix += cast.dx.signum() as isize;
+		} else {
+			total += y_remaining;
+			x_remaining -= y_remaining;
+			y_remaining = 1.0 / cast.dy.abs().max(0.05);
+			iy += cast.dy.signum() as isize;
+		}
 	}
 
 	None
