@@ -85,16 +85,12 @@ fn main() {
 		}
 
 		for x in 0..width {
-			#[derive(Default, Clone, Copy)]
-			struct RowData {
-				size: f32,
-				inv_size: f32,
-				uv: f32,
-			}
-
 			let fx = (x as f32 / width as f32 - 0.5) / aspect;
 
-			let RowData { size, inv_size, uv } = raycast(Raycast {
+			let mut size = 0.0;
+			let mut inv_size = 0.0;
+			let mut uv = 0.0;
+			raycast(Raycast {
 					x: player_x,
 					y: player_y,
 					dx: dx + dy * fx,
@@ -106,18 +102,17 @@ fn main() {
 					(y as usize) < world.len() && (x as usize) < world[0].len()
 				{
 					if world[y as usize][x as usize] == b'#' {
-						Some(RowData {
-							size: 1.0 / dist,
-							inv_size: dist,
-							uv: off_x + off_y
-						})
+						size = 1.0 / dist;
+						inv_size = dist;
+						uv = off_x + off_y;
+						false
 					} else {
-						None
+						true
 					}
 				} else {
-					None
+					true
 				},
-			).unwrap_or_default();
+			);
 
 			for y in 0..height {
 				let fy = y as f32 / height as f32 - 0.5;
