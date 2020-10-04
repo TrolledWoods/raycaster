@@ -21,8 +21,8 @@ impl Default for Raycast {
 
 pub fn raycast<Hit>(
 	cast: Raycast,
-	mut data: impl FnMut(isize, isize) -> Option<Hit>,
-) -> Option<(f32, Hit)> {
+	mut data: impl FnMut(f32, isize, isize, f32, f32) -> Option<Hit>,
+) -> Option<Hit> {
 	let mut total = 0.0;
 
 	let mut ix = cast.x.floor() as isize;
@@ -45,20 +45,20 @@ pub fn raycast<Hit>(
 	};
 
 	while total < cast.max_distance {
-		if let Some(hit) = data(ix, iy) {
-			return Some((total, hit));
-		}
-
 		if x_remaining < y_remaining {
 			total += x_remaining;
 			y_remaining -= x_remaining;
-			x_remaining = 1.0 / cast.dx.abs().max(0.05);
+			x_remaining = 1.0 / cast.dx.abs().max(0.000001);
 			ix += cast.dx.signum() as isize;
 		} else {
 			total += y_remaining;
 			x_remaining -= y_remaining;
-			y_remaining = 1.0 / cast.dy.abs().max(0.05);
+			y_remaining = 1.0 / cast.dy.abs().max(0.000001);
 			iy += cast.dy.signum() as isize;
+		}
+
+		if let Some(hit) = data(total, ix, iy, (x_remaining * cast.dx + 1.0).fract(), (y_remaining * cast.dy + 1.0).fract()) {
+			return Some(hit);
 		}
 	}
 

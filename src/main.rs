@@ -1,16 +1,17 @@
 #![feature(array_methods)]
+#![feature(clamp)]
 
 use minifb::{Key, Window, WindowOptions};
 mod raycast;
-mod iget;
-use iget::SignedIndex;
 
 use raycast::*;
 
 fn main() {
+	let image = image::open("assets/wall.png").unwrap().into_rgba();
+
     let mut buffer: Vec<u32> = Vec::new();
 
-	let mut world = [
+	let world = [
 		b"###################",
 		b"#.................#",
 		b"#.....##......##..#",
@@ -44,13 +45,14 @@ fn main() {
 
 	let mut player_rot: f32 = 0.0;
 
-	let mut frame_rate = [0f32; 10];
+	let mut frame_rate = [0f32; 50];
 	let mut frame_rate_index = 0;
 	let mut last_frame_time = 1.0;
 
 	let mut column_rays = Vec::new();
     while window.is_open() && !window.is_key_down(Key::F4) {
 		let (width, height) = window.get_size();
+		let aspect = height as f32 / width as f32;
 
 		buffer.resize(width * height, 0);
 
@@ -84,9 +86,16 @@ fn main() {
 			player_y -= dy * player_speed;
 		}
 
-		column_rays.resize(width, (1000000000000.0, ()));
+		#[derive(Default, Clone, Copy)]
+		struct RowData {
+			size: f32,
+			inv_size: f32,
+			uv: f32,
+		}
+
+		column_rays.resize(width, Default::default());
 		for x in 0..width {
-			let fx = (x as f32 / width as f32 - 0.5);
+			let fx = (x as f32 / width as f32 - 0.5) / aspect;
 
 			column_rays[x] = raycast(Raycast {
 					x: player_x,
@@ -95,31 +104,37 @@ fn main() {
 					dy: dy - dx * fx,
 					.. Default::default()
 				},
-				|x, y| if
+				|dist, x, y, off_x, off_y| if
 					x >= 0 && y >= 0 &&
 					(y as usize) < world.len() && (x as usize) < world[0].len()
 				{
 					if world[y as usize][x as usize] == b'#' {
-						Some(())
+						Some(RowData {
+							size: 1.0 / dist,
+							inv_size: dist,
+							uv: off_x + off_y
+						})
 					} else {
 						None
 					}
 				} else {
 					None
 				},
-			).unwrap_or((100000000000.0, ()));
+			).unwrap_or_default();
 		}
 
-
 		for y in 0..height {
-			let fy = 2.0 * (y as f32 / height as f32 - 0.5).abs();
+			let fy = y as f32 / height as f32 - 0.5;
 
 			for x in 0..width {
-				let (dist, _) = column_rays[x];
-				buffer[y * width + x] = if fy < 1.0 / dist {
-					((1.0 / (dist * dist * 0.25)).min(1.0) * 255.0) as u32
+				let RowData { size, inv_size, uv } = column_rays[x];
+				buffer[y * width + x] = if 2.0 * fy.abs() < size {
+					u32::from_le_bytes(image.get_pixel(
+						(uv * 32.0).clamp(0.0, 31.0) as u32,
+						((fy * inv_size + 0.5) * 32.0).clamp(0.0, 31.0) as u32
+					).0)
 				} else {
-					0
+					0x101010
 				};
 			}
 		}
