@@ -48,8 +48,6 @@ fn main() {
 	let mut frame_rate = [0f32; 50];
 	let mut frame_rate_index = 0;
 	let mut last_frame_time = 1.0;
-
-	let mut column_rays = Vec::new();
     while window.is_open() && !window.is_key_down(Key::F4) {
 		let (width, height) = window.get_size();
 		let aspect = height as f32 / width as f32;
@@ -86,18 +84,17 @@ fn main() {
 			player_y -= dy * player_speed;
 		}
 
-		#[derive(Default, Clone, Copy)]
-		struct RowData {
-			size: f32,
-			inv_size: f32,
-			uv: f32,
-		}
-
-		column_rays.resize(width, Default::default());
 		for x in 0..width {
+			#[derive(Default, Clone, Copy)]
+			struct RowData {
+				size: f32,
+				inv_size: f32,
+				uv: f32,
+			}
+
 			let fx = (x as f32 / width as f32 - 0.5) / aspect;
 
-			column_rays[x] = raycast(Raycast {
+			let RowData { size, inv_size, uv } = raycast(Raycast {
 					x: player_x,
 					y: player_y,
 					dx: dx + dy * fx,
@@ -121,13 +118,10 @@ fn main() {
 					None
 				},
 			).unwrap_or_default();
-		}
 
-		for y in 0..height {
-			let fy = y as f32 / height as f32 - 0.5;
+			for y in 0..height {
+				let fy = y as f32 / height as f32 - 0.5;
 
-			for x in 0..width {
-				let RowData { size, inv_size, uv } = column_rays[x];
 				buffer[y * width + x] = if 2.0 * fy.abs() < size {
 					u32::from_le_bytes(image.get_pixel(
 						(uv * 32.0).clamp(0.0, 31.0) as u32,
