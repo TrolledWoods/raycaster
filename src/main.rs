@@ -3,6 +3,8 @@
 
 use minifb::{Key, Window, WindowOptions};
 mod raycast;
+mod world;
+// mod threading;
 
 use raycast::*;
 
@@ -11,19 +13,7 @@ fn main() {
 
     let mut buffer: Vec<u32> = Vec::new();
 
-	let world = [
-		b"###################",
-		b"#.................#",
-		b"#.....##......##..#",
-		b"#..........#...#..#",
-		b"#..........#...#..#",
-		b"#..#.......#......#",
-		b"#..#..............#",
-		b"#..#....######....#",
-		b"#.................#",
-		b"#......##....##...#",
-		b"###################",
-	];
+	let world = world::World::new();
 
     let mut window = Window::new(
         "Raycaster",
@@ -97,18 +87,11 @@ fn main() {
 					dy: dy - dx * fx,
 					.. Default::default()
 				},
-				|dist, x, y, off_x, off_y| if
-					x >= 0 && y >= 0 &&
-					(y as usize) < world.len() && (x as usize) < world[0].len()
-				{
-					if world[y as usize][x as usize] == b'#' {
-						size = 1.0 / dist;
-						inv_size = dist;
-						uv = off_x + off_y;
-						false
-					} else {
-						true
-					}
+				|dist, x, y, off_x, off_y| if world.get(x, y) == Some(b'#') {
+					size = 1.0 / dist;
+					inv_size = dist;
+					uv = off_x + off_y;
+					false
 				} else {
 					true
 				},
