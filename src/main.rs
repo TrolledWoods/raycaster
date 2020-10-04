@@ -4,12 +4,15 @@
 use minifb::{Key, Window, WindowOptions};
 mod raycast;
 mod world;
+mod texture;
 // mod threading;
 
 use raycast::*;
 
 fn main() {
-	let image = image::open("assets/wall.png").unwrap().into_rgba();
+	let textures = texture::Textures {
+		wall: image::open("assets/wall.png").unwrap().into_rgba(),
+	};
 
     let mut buffer: Vec<u32> = Vec::new();
 
@@ -101,7 +104,7 @@ fn main() {
 				let fy = y as f32 / height as f32 - 0.5;
 
 				buffer[y * width + x] = if 2.0 * fy.abs() < size {
-					u32::from_le_bytes(image.get_pixel(
+					u32::from_le_bytes(textures.wall.get_pixel(
 						(uv * 32.0).clamp(0.0, 31.0) as u32,
 						((fy * inv_size + 0.5) * 32.0).clamp(0.0, 31.0) as u32
 					).0)
