@@ -7,11 +7,8 @@ use iget::SignedIndex;
 
 use raycast::*;
 
-const WIDTH: usize = 640 * 2;
-const HEIGHT: usize = 360 * 2;
-
 fn main() {
-    let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
+    let mut buffer: Vec<u32> = Vec::new();
 
 	let mut world = [
 		b"###################",
@@ -29,9 +26,12 @@ fn main() {
 
     let mut window = Window::new(
         "Raycaster",
-        WIDTH,
-        HEIGHT,
-        WindowOptions::default(),
+        640,
+        480,
+        WindowOptions {
+			resize: true,
+			.. WindowOptions::default()
+		},
     )
     .unwrap_or_else(|e| {
         panic!("{}", e);
@@ -47,7 +47,13 @@ fn main() {
 	let mut frame_rate = [0f32; 10];
 	let mut frame_rate_index = 0;
 	let mut last_frame_time = 1.0;
+
+	let mut column_rays = Vec::new();
     while window.is_open() && !window.is_key_down(Key::F4) {
+		let (width, height) = window.get_size();
+
+		buffer.resize(width * height, 0);
+
 		let instant = std::time::Instant::now();
 
 		if window.is_key_down(Key::Right) {
@@ -78,10 +84,11 @@ fn main() {
 			player_y -= dy * player_speed;
 		}
 
-		for x in 0..WIDTH {
-			let fx = (x as f32 / WIDTH as f32 - 0.5);
+		column_rays.resize(width, (1000000000000.0, ()));
+		for x in 0..width {
+			let fx = (x as f32 / width as f32 - 0.5);
 
-			let cast_result = raycast(Raycast {
+			column_rays[x] = raycast(Raycast {
 					x: player_x,
 					y: player_y,
 					dx: dx + dy * fx,
@@ -100,37 +107,35 @@ fn main() {
 				} else {
 					None
 				},
-			);
+			).unwrap_or((100000000000.0, ()));
+		}
 
-			match cast_result {
-				Some((dist, ())) => {
-					for y in 0..HEIGHT {
-						let fy = 2.0 * (y as f32 / HEIGHT as f32 - 0.5).abs();
 
-						buffer[y * WIDTH + x] = if fy < 1.0 / dist {
-							((1.0 / (dist * dist * 0.25)).min(1.0) * 255.0) as u32
-						} else {
-							0
-						};
-					}
-				}
-				None => for y in 0..HEIGHT {
-					buffer[y * WIDTH + x] = 0;
-				}
+		for y in 0..height {
+			let fy = 2.0 * (y as f32 / height as f32 - 0.5).abs();
+
+			for x in 0..width {
+				let (dist, _) = column_rays[x];
+				buffer[y * width + x] = if fy < 1.0 / dist {
+					((1.0 / (dist * dist * 0.25)).min(1.0) * 255.0) as u32
+				} else {
+					0
+				};
 			}
 		}
 
+		frame_rate[frame_rate_index] = instant.elapsed().as_secs_f32();
+
+        window
+            .update_with_buffer(&buffer, width, height)
+            .unwrap();
+
 		last_frame_time = instant.elapsed().as_secs_f32();
-		frame_rate[frame_rate_index] = last_frame_time;
 		frame_rate_index += 1;
 		if frame_rate_index >= frame_rate.len() {
 			frame_rate_index = 0;
 			let average: f32 = frame_rate.iter().sum::<f32>() / frame_rate.len() as f32;
 			println!("{} seconds / {} fps (if no fps cap was applied)", average, 1.0 / average);
 		}
-
-        window
-            .update_with_buffer(&buffer, WIDTH, HEIGHT)
-            .unwrap();
     }
 }
