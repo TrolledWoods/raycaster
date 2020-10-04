@@ -7,8 +7,8 @@ use iget::SignedIndex;
 
 use raycast::*;
 
-const WIDTH: usize = 640;
-const HEIGHT: usize = 360;
+const WIDTH: usize = 640 * 2;
+const HEIGHT: usize = 360 * 2;
 
 fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
@@ -37,8 +37,7 @@ fn main() {
         panic!("{}", e);
     });
 
-    // Limit to max ~60 fps update rate
-    window.limit_update_rate(Some(std::time::Duration::from_secs_f32(1.0 / 60.0)));
+    window.limit_update_rate(Some(std::time::Duration::from_secs_f32(1.0 / 30.0)));
 
 	let mut player_x = 5.0;
 	let mut player_y = 5.0;
@@ -47,20 +46,21 @@ fn main() {
 
 	let mut frame_rate = [0f32; 10];
 	let mut frame_rate_index = 0;
+	let mut last_frame_time = 1.0;
     while window.is_open() && !window.is_key_down(Key::F4) {
 		let instant = std::time::Instant::now();
 
 		if window.is_key_down(Key::Right) {
-			player_rot -= 0.1;
+			player_rot -= 5.0 * last_frame_time;
 		}
 		if window.is_key_down(Key::Left) {
-			player_rot += 0.1;
+			player_rot += 5.0 * last_frame_time;
 		}
 
 		let dx = player_rot.cos();
 		let dy = player_rot.sin();
 
-		let player_speed = 0.1;
+		let player_speed = 4.0 * last_frame_time;
 		if window.is_key_down(Key::A) {
 			player_x -= dy * player_speed;
 			player_y += dx * player_speed;
@@ -105,7 +105,8 @@ fn main() {
             .update_with_buffer(&buffer, WIDTH, HEIGHT)
             .unwrap();
 
-		frame_rate[frame_rate_index] = instant.elapsed().as_secs_f32();
+		last_frame_time = instant.elapsed().as_secs_f32();
+		frame_rate[frame_rate_index] = last_frame_time;
 		frame_rate_index += 1;
 		if frame_rate_index >= frame_rate.len() {
 			frame_rate_index = 0;
