@@ -5,9 +5,7 @@ use minifb::{Key, Window, WindowOptions};
 mod raycast;
 mod world;
 mod texture;
-// mod threading;
-
-use raycast::*;
+mod threading;
 
 fn main() {
 	let textures = texture::Textures {
@@ -31,7 +29,7 @@ fn main() {
         panic!("{}", e);
     });
 
-    window.limit_update_rate(Some(std::time::Duration::from_secs_f32(1.0 / 30.0)));
+    window.limit_update_rate(Some(std::time::Duration::from_secs_f32(1.0 / 60.0)));
 
 	let mut player_x = 5.0;
 	let mut player_y = 5.0;
@@ -41,6 +39,8 @@ fn main() {
 	let mut frame_rate = [0f32; 50];
 	let mut frame_rate_index = 0;
 	let mut last_frame_time = 1.0;
+
+	let thread_pool = threading::ThreadPool::new(5);
     while window.is_open() && !window.is_key_down(Key::F4) {
 		let (width, height) = window.get_size();
 		let aspect = height as f32 / width as f32;
@@ -77,42 +77,49 @@ fn main() {
 			player_y -= dy * player_speed;
 		}
 
-		for x in 0..width {
-			let fx = (x as f32 / width as f32 - 0.5) / aspect;
+		thread_pool.raycast_scene(
+			&world, &textures,
+			player_x, player_y, player_rot,
+			width, height, &mut buffer,
+			aspect
+		);
 
-			let mut size = 0.0;
-			let mut inv_size = 0.0;
-			let mut uv = 0.0;
-			raycast(Raycast {
-					x: player_x,
-					y: player_y,
-					dx: dx + dy * fx,
-					dy: dy - dx * fx,
-					.. Default::default()
-				},
-				|dist, x, y, off_x, off_y| if world.get(x, y) == Some(b'#') {
-					size = 1.0 / dist;
-					inv_size = dist;
-					uv = off_x + off_y;
-					false
-				} else {
-					true
-				},
-			);
+		// for x in 0..width {
+		// 	let fx = (x as f32 / width as f32 - 0.5) / aspect;
 
-			for y in 0..height {
-				let fy = y as f32 / height as f32 - 0.5;
+		// 	let mut size = 0.0;
+		// 	let mut inv_size = 0.0;
+		// 	let mut uv = 0.0;
+		// 	raycast(Raycast {
+		// 			x: player_x,
+		// 			y: player_y,
+		// 			dx: dx + dy * fx,
+		// 			dy: dy - dx * fx,
+		// 			.. Default::default()
+		// 		},
+		// 		|dist, x, y, off_x, off_y| if world.get(x, y) == Some(b'#') {
+		// 			size = 1.0 / dist;
+		// 			inv_size = dist;
+		// 			uv = off_x + off_y;
+		// 			false
+		// 		} else {
+		// 			true
+		// 		},
+		// 	);
 
-				buffer[y * width + x] = if 2.0 * fy.abs() < size {
-					u32::from_le_bytes(textures.wall.get_pixel(
-						(uv * 32.0).clamp(0.0, 31.0) as u32,
-						((fy * inv_size + 0.5) * 32.0).clamp(0.0, 31.0) as u32
-					).0)
-				} else {
-					0x101010
-				};
-			}
-		}
+		// 	for y in 0..height {
+		// 		let fy = y as f32 / height as f32 - 0.5;
+
+		// 		buffer[y * width + x] = if 2.0 * fy.abs() < size {
+		// 			u32::from_le_bytes(textures.wall.get_pixel(
+		// 				(uv * 32.0).clamp(0.0, 31.0) as u32,
+		// 				((fy * inv_size + 0.5) * 32.0).clamp(0.0, 31.0) as u32
+		// 			).0)
+		// 		} else {
+		// 			0x101010
+		// 		};
+		// 	}
+		// }
 
 		frame_rate[frame_rate_index] = instant.elapsed().as_secs_f32();
 
@@ -128,4 +135,6 @@ fn main() {
 			println!("{} seconds / {} fps (if no fps cap was applied)", average, 1.0 / average);
 		}
     }
+
+	thread_pool.join();
 }
