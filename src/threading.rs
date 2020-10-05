@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use crate::world::World;
 use crate::texture::Textures;
 use crate::raycast::{raycast, Raycast};
+use crate::render::ImageColumn;
 
 const SPLIT_SIZE: usize = 64;
 
@@ -141,8 +142,7 @@ unsafe fn run_work(work: RaycastWork) {
 	for x in 0..width {
 		let fx = ((x + x_offset) as f32 / stride as f32 - 0.5) / aspect;
 
-		let mut size = 0.0;
-		let mut inv_size = 0.0;
+		let mut dist = 0.0;
 		let mut uv = 0.0;
 		raycast(Raycast {
 				x: cam_x,
@@ -151,9 +151,8 @@ unsafe fn run_work(work: RaycastWork) {
 				dy: dy - dx * fx,
 				.. Default::default()
 			},
-			|dist, x, y, off_x, off_y| if world.get(x, y) == Some(b'#') {
-				size = 1.0 / dist;
-				inv_size = dist;
+			|d, x, y, off_x, off_y| if world.get(x, y) == Some(b'#') {
+				dist = d;
 				uv = off_x + off_y;
 				false
 			} else {
@@ -161,17 +160,15 @@ unsafe fn run_work(work: RaycastWork) {
 			},
 		);
 
-		for y in 0..height {
-			let fy = y as f32 / height as f32 - 0.5;
+		let size = 1.0 / dist;
 
-			*buffer.add(y * stride + x) = if 2.0 * fy.abs() < size {
-				u32::from_le_bytes(textures.wall.get_pixel(
-					(uv * 32.0).clamp(0.0, 31.0) as u32,
-					((fy * inv_size + 0.5) * 32.0).clamp(0.0, 31.0) as u32
-				).0)
-			} else {
-				0x101010
-			};
-		}
+		let mut column = ImageColumn::from_raw(buffer.add(x), stride, height);
+		column.draw_partial_image(&textures.wall, 
+			(uv * 32.0).clamp(0.0, 31.0) as u32,
+			0.0, 1.0,
+			0.5 - size / 2.0,
+			0.5 + size / 2.0,
+			1.0 / (dist * dist * 0.1),
+		);
 	}
 }

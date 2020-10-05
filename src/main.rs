@@ -6,6 +6,7 @@ mod raycast;
 mod world;
 mod texture;
 mod threading;
+mod render;
 
 fn main() {
 	let textures = texture::Textures {
@@ -29,7 +30,7 @@ fn main() {
         panic!("{}", e);
     });
 
-    window.limit_update_rate(Some(std::time::Duration::from_secs_f32(1.0 / 60.0)));
+    window.limit_update_rate(Some(std::time::Duration::from_secs_f32(1.0 / 40.0)));
 
 	let mut player_x = 5.0;
 	let mut player_y = 5.0;
@@ -77,6 +78,7 @@ fn main() {
 			player_y -= dy * player_speed;
 		}
 
+		for val in buffer.iter_mut() { *val = 0; }
 		thread_pool.raycast_scene(
 			&world, &textures,
 			player_x, player_y, player_rot,
