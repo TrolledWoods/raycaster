@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 use image::RgbaImage;
+use crate::float_range;
 
 pub struct ImageColumn<'a> {
 	// The buffer, as well as buffer.add(stride), buffer.add(stride * 2) e.t.c. until
@@ -51,22 +52,28 @@ impl<'a> ImageColumn<'a> {
 			pos_y_end
 		};
 
-		let mut pixel = crop_y_start * image.height() as f32;
+		let mut pixel_iter = float_range::range(crop_y_start * image.height() as f32, crop_y_end * image.height() as f32);
+		let mut from_pixel = pixel_iter.next().unwrap();
 		let d_pixel = 
-			((crop_y_end - crop_y_start) * image.height() as f32)
-			/ ((pos_y_end - pos_y_start) * self.height as f32);
-		for self_y in (pos_y_start * self.height as f32) as usize .. ((pos_y_end * self.height as f32) as usize).min(self.height - 1) {
-			let pix = image.get_pixel(image_x, (pixel as u32).min(image.height() - 1)).0;
+			((pos_y_end - pos_y_start) * self.height as f32)
+			/ ((crop_y_end - crop_y_start) * image.height() as f32);
+		let mut self_y = pos_y_start * self.height as f32;
+		for to_pixel in pixel_iter {
+			let pix = image.get_pixel(image_x, (from_pixel as u32).min(image.height() - 1));
+			let self_y_end = self_y + d_pixel * (to_pixel - from_pixel);
 
 			if pix[3] > 0 {
-				unsafe {
-					*self.buffer.add(self_y * self.stride) = u32::from_le_bytes(
-						dim_color(pix, dimming)
-					);
+				let dimmed = u32::from_le_bytes(dim_color(pix.0, dimming));
+
+				for buffer_index in self_y as usize .. (self_y_end as usize).min(self.height - 1) {
+					unsafe {
+						*self.buffer.add(buffer_index * self.stride) = dimmed;
+					}
 				}
 			}
 
-			pixel += d_pixel;
+			self_y = self_y_end;
+			from_pixel = to_pixel;
 		}
 	}
 }

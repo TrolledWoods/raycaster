@@ -7,6 +7,7 @@ mod world;
 mod texture;
 mod threading;
 mod render;
+mod float_range;
 
 use world::Entity;
 
