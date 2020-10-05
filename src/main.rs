@@ -99,6 +99,7 @@ fn main() {
 
 	let mut cam_pos = Vec2::new(5.0, 5.0);
 	let mut cam_matrix = Mat2::zero();
+	let mut inv_cam_matrix = Mat2::zero();
 
 	let mut frame_rate = [0f32; 50];
 	let mut frame_rate_index = 0;
@@ -122,6 +123,7 @@ fn main() {
 			}
 
 			cam_matrix = Mat2::identity().rotated_z(player.rot);
+			inv_cam_matrix = Mat2::identity().rotated_z(-player.rot);
 
 			let player_speed = 0.2;
 			if window.is_key_down(Key::A) {
@@ -152,18 +154,26 @@ fn main() {
 			aspect
 		);
 
-		// for (_, entity) in world.entities {
-		// 	let mut dx = entity.x - cam_x;
-		// 	let mut dy = entity.y - cam_y;
-		// 	let mag = (dx * dx + dy * dy).sqrt();
+		for (_, entity) in world.entities() {
+			let diff = entity.pos - cam_pos;
+			let inverted = inv_cam_matrix * diff;
 
-		// 	if mag.abs() < 0.1 { continue; }
-
-		// 	dx /= mag;
-		// 	dy /= mag;
-
-		// 	
-		// }
+			if inverted.y >= 0.05 {
+				let mut draw = true;
+				raycast::raycast(raycast::Raycast {
+					x: cam_pos.x,
+					y: cam_pos.y,
+					dx: diff.x,
+					dy: diff.y,
+					max_distance: 1.0,
+				}, |_, x, y, _, _| if world.tiles.tile_is_colliding(x, y) {
+					draw = false;
+					false
+				} else {
+					true
+				});
+			}
+		}
 
 		frame_rate[frame_rate_index] = instant.elapsed().as_secs_f32();
 

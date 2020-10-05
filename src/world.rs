@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::num::NonZeroU32;
 
-use crate::{Vec2, Mat2};
+use crate::Vec2;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EntityId(NonZeroU32);
