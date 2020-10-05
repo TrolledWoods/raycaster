@@ -161,7 +161,7 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>) {
 				.. Default::default()
 			},
 			|dist, x, y, off_x, off_y| {
-				let tile = world.get(x, y);
+				let tile = world.tiles.get(x, y);
 				let should_continue = match tile {
 					Some(tile) => {
 						match tile.get_graphics() {
