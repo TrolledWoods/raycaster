@@ -9,16 +9,26 @@ mod threading;
 mod render;
 
 fn main() {
-	let textures = texture::Textures {
-		textures: vec![
-			image::open("assets/wall.png").unwrap().into_rgba(),
-			image::open("assets/window.png").unwrap().into_rgba(),
-		],
-	};
+	let textures = texture::Textures::create(vec![
+		image::open("assets/wall.png").unwrap().into_rgba(),
+		image::open("assets/window.png").unwrap().into_rgba(),
+	]);
 
     let mut buffer: Vec<u32> = Vec::new();
 
-	let world = world::World::new();
+	let world = world::World::new(&[
+		b"###################",
+		b"#                 #",
+		b"#  #############  #",
+		b"#  #    #         #",
+		b"#  #    o         #",
+		b"#       #         #",
+		b"#  #####  # #   # #",
+		b"#  #   # #####o## #",
+		b"#  # # # #  #   # #",
+		b"#    #   #        #",
+		b"###################",
+	]);
 
     let mut window = Window::new(
         "Raycaster",

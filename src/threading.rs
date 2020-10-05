@@ -163,23 +163,20 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>) {
 			|dist, x, y, off_x, off_y| {
 				let tile = world.get(x, y);
 				let should_continue = match tile {
-					Some(b'#') => {
-						hits.push(HitData {
-							dist,
-							uv: off_x + off_y, 
-							texture_id: 0,
-						});
-						false
+					Some(tile) => {
+						match tile.get_graphics() {
+							Some(graphics) => {
+								hits.push(HitData {
+									dist,
+									uv: off_x + off_y, 
+									texture_id: graphics.texture,
+								});
+								graphics.is_transparent
+							}
+							None => true
+						}
 					}
-					Some(b'o') if prev != Some(b'o') => {
-						hits.push(HitData {
-							dist,
-							uv: off_x + off_y, 
-							texture_id: 1,
-						});
-						true
-					}
-					_ => true,
+					None => true
 				};
 				prev = tile;
 				should_continue
@@ -189,7 +186,7 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>) {
 		let mut column = ImageColumn::from_raw(buffer.add(x), stride, height);
 		for hit in hits.iter().rev() {
 			let size = 1.0 / hit.dist;
-			column.draw_partial_image(&textures.textures[hit.texture_id as usize], 
+			column.draw_partial_image(textures.get(hit.texture_id), 
 				(hit.uv * 32.0).clamp(0.0, 31.0) as u32,
 				0.0, 1.0,
 				0.5 - size / 2.0,
