@@ -56,10 +56,14 @@ impl<'a> ImageColumn<'a> {
 			((crop_y_end - crop_y_start) * image.height() as f32)
 			/ ((pos_y_end - pos_y_start) * self.height as f32);
 		for self_y in (pos_y_start * self.height as f32) as usize .. ((pos_y_end * self.height as f32) as usize).min(self.height - 1) {
-			unsafe {
-				*self.buffer.add(self_y * self.stride) = u32::from_le_bytes(
-					dim_color(image.get_pixel(image_x, (pixel as u32).min(image.height() - 1)).0, dimming)
-				);
+			let pix = image.get_pixel(image_x, (pixel as u32).min(image.height() - 1)).0;
+
+			if pix[3] > 0 {
+				unsafe {
+					*self.buffer.add(self_y * self.stride) = u32::from_le_bytes(
+						dim_color(pix, dimming)
+					);
+				}
 			}
 
 			pixel += d_pixel;

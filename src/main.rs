@@ -10,7 +10,10 @@ mod render;
 
 fn main() {
 	let textures = texture::Textures {
-		wall: image::open("assets/wall.png").unwrap().into_rgba(),
+		textures: vec![
+			image::open("assets/wall.png").unwrap().into_rgba(),
+			image::open("assets/window.png").unwrap().into_rgba(),
+		],
 	};
 
     let mut buffer: Vec<u32> = Vec::new();

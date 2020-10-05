@@ -1,3 +1,3 @@
 pub struct Textures {
-	pub wall: image::RgbaImage,
+	pub textures: Vec<image::RgbaImage>,
 }

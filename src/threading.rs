@@ -51,6 +51,7 @@ impl ThreadPool {
 		for _ in 0..n_threads {
 			let shared = shared.clone();
 			threads.push(spawn(move || {
+				let mut hits = Vec::new();
 				while shared.keep_running.load(Ordering::SeqCst) {
 					let mut lock = shared.work.lock().unwrap();
 					if !lock.1.is_empty() {
@@ -58,7 +59,7 @@ impl ThreadPool {
 						lock.0 += 1;
 						std::mem::drop(lock);
 
-						unsafe { run_work(work); }
+						unsafe { run_work(work, &mut hits); }
 
 						let mut lock = shared.work.lock().unwrap();
 						lock.0 -= 1;
@@ -106,11 +107,12 @@ impl ThreadPool {
 			});
 		}
 
+		let mut hits = Vec::new();
 		while let Some(work) = {
 			let value = self.shared.work.lock().unwrap().1.pop();
 			value
 		} {
-			unsafe { run_work(work); }
+			unsafe { run_work(work, &mut hits); }
 		}
 
 		// While work is still being performed, wait
@@ -127,7 +129,14 @@ impl ThreadPool {
 	}
 }
 
-unsafe fn run_work(work: RaycastWork) {
+#[derive(Clone, Copy)]
+struct HitData {
+	dist: f32,
+	uv: f32,
+	texture_id: u16,
+}
+
+unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>) {
 	let RaycastWork {
 		world, textures, buffer, stride, width, height,
 		x_offset, dx, dy,
@@ -142,8 +151,8 @@ unsafe fn run_work(work: RaycastWork) {
 	for x in 0..width {
 		let fx = ((x + x_offset) as f32 / stride as f32 - 0.5) / aspect;
 
-		let mut dist = 0.0;
-		let mut uv = 0.0;
+		hits.clear();
+		let mut prev = None;
 		raycast(Raycast {
 				x: cam_x,
 				y: cam_y,
@@ -151,24 +160,42 @@ unsafe fn run_work(work: RaycastWork) {
 				dy: dy - dx * fx,
 				.. Default::default()
 			},
-			|d, x, y, off_x, off_y| if world.get(x, y) == Some(b'#') {
-				dist = d;
-				uv = off_x + off_y;
-				false
-			} else {
-				true
+			|dist, x, y, off_x, off_y| {
+				let tile = world.get(x, y);
+				let should_continue = match tile {
+					Some(b'#') => {
+						hits.push(HitData {
+							dist,
+							uv: off_x + off_y, 
+							texture_id: 0,
+						});
+						false
+					}
+					Some(b'o') if prev != Some(b'o') => {
+						hits.push(HitData {
+							dist,
+							uv: off_x + off_y, 
+							texture_id: 1,
+						});
+						true
+					}
+					_ => true,
+				};
+				prev = tile;
+				should_continue
 			},
 		);
 
-		let size = 1.0 / dist;
-
 		let mut column = ImageColumn::from_raw(buffer.add(x), stride, height);
-		column.draw_partial_image(&textures.wall, 
-			(uv * 32.0).clamp(0.0, 31.0) as u32,
-			0.0, 1.0,
-			0.5 - size / 2.0,
-			0.5 + size / 2.0,
-			1.0 / (dist * dist * 0.1),
-		);
+		for hit in hits.iter().rev() {
+			let size = 1.0 / hit.dist;
+			column.draw_partial_image(&textures.textures[hit.texture_id as usize], 
+				(hit.uv * 32.0).clamp(0.0, 31.0) as u32,
+				0.0, 1.0,
+				0.5 - size / 2.0,
+				0.5 + size / 2.0,
+				1.0 / (hit.dist * hit.dist * 0.1),
+			);
+		}
 	}
 }
