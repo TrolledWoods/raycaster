@@ -9,6 +9,9 @@ mod threading;
 mod render;
 mod float_range;
 
+type Vec2 = vek::vec::repr_simd::Vec2<f32>;
+type Mat2 = vek::mat::repr_simd::column_major::Mat2<f32>;
+
 use world::Entity;
 
 fn main() {
@@ -30,6 +33,51 @@ fn main() {
 		b"#  #   # #####o## #",
 		b"#  # # # #  #   # #",
 		b"#    #   #        #",
+		b"# #################",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
+		b"# oooooooooooooooo#",
 		b"###################",
 	]);
 	let player_id = world.insert_entity(Entity::new(5.0, 5.0, 0.1));
@@ -113,41 +161,17 @@ fn main() {
 			aspect
 		);
 
-		// for x in 0..width {
-		// 	let fx = (x as f32 / width as f32 - 0.5) / aspect;
+		// for (_, entity) in world.entities {
+		// 	let mut dx = entity.x - cam_x;
+		// 	let mut dy = entity.y - cam_y;
+		// 	let mag = (dx * dx + dy * dy).sqrt();
 
-		// 	let mut size = 0.0;
-		// 	let mut inv_size = 0.0;
-		// 	let mut uv = 0.0;
-		// 	raycast(Raycast {
-		// 			x: player_x,
-		// 			y: player_y,
-		// 			dx: dx + dy * fx,
-		// 			dy: dy - dx * fx,
-		// 			.. Default::default()
-		// 		},
-		// 		|dist, x, y, off_x, off_y| if world.get(x, y) == Some(b'#') {
-		// 			size = 1.0 / dist;
-		// 			inv_size = dist;
-		// 			uv = off_x + off_y;
-		// 			false
-		// 		} else {
-		// 			true
-		// 		},
-		// 	);
+		// 	if mag.abs() < 0.1 { continue; }
 
-		// 	for y in 0..height {
-		// 		let fy = y as f32 / height as f32 - 0.5;
+		// 	dx /= mag;
+		// 	dy /= mag;
 
-		// 		buffer[y * width + x] = if 2.0 * fy.abs() < size {
-		// 			u32::from_le_bytes(textures.wall.get_pixel(
-		// 				(uv * 32.0).clamp(0.0, 31.0) as u32,
-		// 				((fy * inv_size + 0.5) * 32.0).clamp(0.0, 31.0) as u32
-		// 			).0)
-		// 		} else {
-		// 			0x101010
-		// 		};
-		// 	}
+		// 	
 		// }
 
 		frame_rate[frame_rate_index] = instant.elapsed().as_secs_f32();

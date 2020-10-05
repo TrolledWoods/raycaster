@@ -50,6 +50,10 @@ impl World {
 		EntityId(id)
 	}
 
+	pub fn entities(&self) -> impl Iterator<Item = (EntityId, &Entity)> {
+		self.entities.iter().map(|(&key, value)| (EntityId(key), value))
+	}
+
 	pub fn get_entity(&self, id: EntityId) -> Option<&Entity> {
 		self.entities.get(&id.0)
 	}
