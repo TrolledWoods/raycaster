@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::num::NonZeroU32;
 
+use crate::{Vec2, Mat2};
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EntityId(NonZeroU32);
 
@@ -64,20 +66,20 @@ impl World {
 
 	pub fn simulate_physics(&mut self, time_step: f32) {
 		for entity in self.entities.values_mut() {
-			entity.x += entity.vx * time_step;
-			if self.tiles.square_is_colliding(entity.x, entity.y, entity.size) {
-				entity.x -= entity.vx * time_step;
-				entity.vx *= -0.6;
+			entity.pos.x += entity.vel.x * time_step;
+			if self.tiles.square_is_colliding(entity.pos, entity.size) {
+				println!("Colliding!");
+				entity.pos.x -= entity.vel.x * time_step;
+				entity.vel.x *= -0.6;
 			}
 
-			entity.y += entity.vy * time_step;
-			if self.tiles.square_is_colliding(entity.x, entity.y, entity.size) {
-				entity.y -= entity.vy * time_step;
-				entity.vy *= -0.6;
+			entity.pos.y += entity.vel.y * time_step;
+			if self.tiles.square_is_colliding(entity.pos, entity.size) {
+				entity.pos.y -= entity.vel.y * time_step;
+				entity.vel.y *= -0.6;
 			}
 
-			entity.vx -= entity.vx * entity.move_drag * time_step;
-			entity.vy -= entity.vy * entity.move_drag * time_step;
+			entity.vel -= entity.vel * entity.move_drag * time_step;
 		}
 	}
 }
@@ -89,11 +91,11 @@ pub struct TileMap {
 }
 
 impl TileMap {
-	pub fn square_is_colliding(&self, x: f32, y: f32, size: f32) -> bool {
-		let left = (x - size).floor() as isize;
-		let right = (x + size).floor() as isize;
-		let top = (y - size).floor() as isize;
-		let bottom = (y + size).floor() as isize;
+	pub fn square_is_colliding(&self, pos: Vec2, size: f32) -> bool {
+		let left = (pos.x - size).floor() as isize;
+		let right = (pos.x + size).floor() as isize;
+		let top = (pos.y - size).floor() as isize;
+		let bottom = (pos.y + size).floor() as isize;
 
 		for y in top..=bottom {
 			for x in left..=right {
@@ -154,24 +156,18 @@ impl Tile {
 }
 
 pub struct Entity {
-	pub x: f32,
-	pub y: f32,
-	pub vx: f32,
-	pub vy: f32,
+	pub pos: Vec2,
+	pub vel: Vec2,
 	pub move_drag: f32,
-
 	pub rot: f32,
-
 	pub size: f32,
 }
 
 impl Entity {
-	pub fn new(x: f32, y: f32, size: f32) -> Self {
+	pub fn new(pos: Vec2, size: f32) -> Self {
 		Entity {
-			x,
-			y,
-			vx: 0.0,
-			vy: 0.0,
+			pos,
+			vel: Vec2::zero(),
 			move_drag: 1.0,
 			rot: 0.0,
 			size,

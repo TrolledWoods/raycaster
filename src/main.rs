@@ -80,7 +80,7 @@ fn main() {
 		b"# oooooooooooooooo#",
 		b"###################",
 	]);
-	let player_id = world.insert_entity(Entity::new(5.0, 5.0, 0.1));
+	let player_id = world.insert_entity(Entity::new(Vec2::one() * 5.0, 0.1));
 
     let mut window = Window::new(
         "Raycaster",
@@ -97,10 +97,8 @@ fn main() {
 
     window.limit_update_rate(Some(std::time::Duration::from_secs_f32(1.0 / 40.0)));
 
-	let mut cam_x = 5.0;
-	let mut cam_y = 5.0;
-
-	let mut cam_rot: f32 = 0.0;
+	let mut cam_pos = Vec2::new(5.0, 5.0);
+	let mut cam_matrix = Mat2::zero();
 
 	let mut frame_rate = [0f32; 50];
 	let mut frame_rate_index = 0;
@@ -117,46 +115,39 @@ fn main() {
 
 		if let Some(player) = world.get_entity_mut(player_id) {
 			if window.is_key_down(Key::Right) {
-				player.rot -= 5.0 * last_frame_time;
-			}
-			if window.is_key_down(Key::Left) {
 				player.rot += 5.0 * last_frame_time;
 			}
+			if window.is_key_down(Key::Left) {
+				player.rot -= 5.0 * last_frame_time;
+			}
 
-			let dx = player.rot.cos();
-			let dy = player.rot.sin();
+			cam_matrix = Mat2::identity().rotated_z(player.rot);
 
 			let player_speed = 0.2;
 			if window.is_key_down(Key::A) {
-				player.vx -= dy * player_speed;
-				player.vy += dx * player_speed;
+				player.vel += cam_matrix * Vec2::right() * player_speed;
 			}
 			if window.is_key_down(Key::D) {
-				player.vx += dy * player_speed;
-				player.vy -= dx * player_speed;
+				player.vel += cam_matrix * Vec2::left() * player_speed;
 			}
 			if window.is_key_down(Key::W) {
-				player.vx += dx * player_speed;
-				player.vy += dy * player_speed;
+				player.vel += cam_matrix * Vec2::up() * player_speed;
 			}
 			if window.is_key_down(Key::S) {
-				player.vx -= dx * player_speed;
-				player.vy -= dy * player_speed;
+				player.vel += cam_matrix * Vec2::down() * player_speed;
 			}
 		}
 
 		world.simulate_physics(last_frame_time);
 
 		if let Some(player) = world.get_entity(player_id) {
-			cam_x = player.x;
-			cam_y = player.y;
-			cam_rot = player.rot;
+			cam_pos = player.pos;
 		}
 
 		for val in buffer.iter_mut() { *val = 0; }
 		thread_pool.raycast_scene(
 			&world, &textures,
-			cam_x, cam_y, cam_rot,
+			cam_pos, cam_matrix,
 			width, height, &mut buffer,
 			aspect
 		);

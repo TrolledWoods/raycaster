@@ -7,6 +7,7 @@ use crate::world::World;
 use crate::texture::Textures;
 use crate::raycast::{raycast, Raycast};
 use crate::render::ImageColumn;
+use crate::{Vec2, Mat2};
 
 const SPLIT_SIZE: usize = 64;
 
@@ -19,10 +20,8 @@ struct RaycastWork {
 	width: usize,
 	height: usize,
 	x_offset: usize,
-	dx: f32,
-	dy: f32,
-	cam_x: f32,
-	cam_y: f32,
+	cam_matrix: Mat2,
+	cam_pos: Vec2,
 	aspect: f32,
 }
 
@@ -81,14 +80,11 @@ impl ThreadPool {
 	pub fn raycast_scene(
 		&self,
 		world: &World, textures: &Textures,
-		cam_x: f32, cam_y: f32, cam_rot: f32,
+		cam_pos: Vec2, cam_matrix: Mat2,
 		width: usize, height: usize, buffer: &mut [u32],
 		aspect: f32,
 	) {
 		assert_eq!(width * height, buffer.len());
-
-		let dx = cam_rot.cos();
-		let dy = cam_rot.sin();
 
 		for (i, chunk) in buffer[0..width].chunks_mut(SPLIT_SIZE).enumerate() {
 			self.shared.work.lock().unwrap().1.push(RaycastWork {
@@ -98,11 +94,9 @@ impl ThreadPool {
 				stride: width,
 				width: chunk.len(),
 				height,
-				cam_x,
-				cam_y,
+				cam_pos,
+				cam_matrix,
 				x_offset: i * SPLIT_SIZE,
-				dx,
-				dy,
 				aspect,
 			});
 		}
@@ -139,8 +133,9 @@ struct HitData {
 unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>) {
 	let RaycastWork {
 		world, textures, buffer, stride, width, height,
-		x_offset, dx, dy,
-		cam_x, cam_y,
+		x_offset,
+		cam_matrix,
+		cam_pos,
 		aspect,
 	} = work;
 
@@ -150,14 +145,15 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>) {
 
 	for x in 0..width {
 		let fx = ((x + x_offset) as f32 / stride as f32 - 0.5) / aspect;
+		let offset = cam_matrix * Vec2::new(-fx, 1.0);
 
 		hits.clear();
 		let mut prev = None;
 		raycast(Raycast {
-				x: cam_x,
-				y: cam_y,
-				dx: dx + dy * fx,
-				dy: dy - dx * fx,
+				x: cam_pos.x,
+				y: cam_pos.y,
+				dx: offset.x,
+				dy: offset.y,
 				.. Default::default()
 			},
 			|dist, x, y, off_x, off_y| {
@@ -185,7 +181,7 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>) {
 
 		let mut column = ImageColumn::from_raw(buffer.add(x), stride, height);
 		for hit in hits.iter().rev() {
-			let size = 1.0 / hit.dist;
+			let size = 1.0f32 / (0.0000001 + hit.dist);
 			column.draw_partial_image(textures.get(hit.texture_id), 
 				(hit.uv * 32.0).clamp(0.0, 31.0) as u32,
 				0.0, 1.0,
