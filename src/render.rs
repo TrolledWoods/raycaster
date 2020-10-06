@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use image::RgbaImage;
+use image::{Pixel, RgbaImage};
 use crate::float_range;
 
 pub struct ImageColumn<'a> {
@@ -63,11 +63,14 @@ impl<'a> ImageColumn<'a> {
 			let self_y_end = self_y + d_pixel * (to_pixel - from_pixel);
 
 			if pix[3] > 0 {
-				let dimmed = u32::from_le_bytes(dim_color(pix.0, dimming));
+				let dimmed = dim_color(pix.channels4(), dimming);
 
 				for buffer_index in self_y as usize .. (self_y_end as usize).min(self.height - 1) {
 					unsafe {
-						*self.buffer.add(buffer_index * self.stride) = dimmed;
+						*self.buffer.add(buffer_index * self.stride) =
+							dimmed.0 as u32 * 256 * 256 +
+							dimmed.1 as u32 * 256 +
+							dimmed.2 as u32;
 					}
 				}
 			}
@@ -79,11 +82,11 @@ impl<'a> ImageColumn<'a> {
 }
 
 #[inline]
-fn dim_color(color: [u8; 4], dim_factor: f32) -> [u8; 4] {
-	[
-		(color[0] as f32 * dim_factor) as u8,
-		(color[1] as f32 * dim_factor) as u8,
-		(color[2] as f32 * dim_factor) as u8,
-		(color[3] as f32 * dim_factor) as u8,
-	]
+fn dim_color(color: (u8, u8, u8, u8), dim_factor: f32) -> (u8, u8, u8, u8) {
+	(
+		(color.0 as f32 * dim_factor * dim_factor) as u8,
+		(color.1 as f32 * dim_factor * dim_factor) as u8,
+		(color.2 as f32 * dim_factor) as u8,
+		0,
+	)
 }

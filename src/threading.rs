@@ -90,6 +90,10 @@ impl ThreadPool {
 	) {
 		assert_eq!(width * height, buffer.len());
 
+		if height == 0 {
+			return;
+		}
+
 		for (i, chunk) in buffer[0..width].chunks_mut(SPLIT_SIZE).enumerate() {
 			self.shared.work.lock().unwrap().1.push(RaycastWork {
 				world,
@@ -178,12 +182,14 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>) {
 								graphics.is_transparent
 							}
 							None => {
+								let mut n_entities_drawn = 0;
 								for &entity_id in tile.entities_inside.iter() {
 									let entity = world.get_entity(entity_id).unwrap();
 
 									let rel_entity_pos = inv_cam_matrix * (entity.pos - cam_pos);
 									let hit_x = 0.5 + (rel_entity_pos.x - fx * rel_entity_pos.y) / entity.texture_size;
 									if hit_x >= 0.0 && hit_x < 1.0 {
+										n_entities_drawn += 1;
 										hits.push(HitData {
 											dist: rel_entity_pos.y,
 											uv: hit_x,
@@ -192,6 +198,11 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>) {
 										});
 									}
 								}
+
+								let hit_len = hits.len();
+								hits[hit_len - n_entities_drawn ..].sort_unstable_by(
+									|a, b| a.dist.partial_cmp(&b.dist).unwrap()
+								);
 								true
 							}
 						}
@@ -211,7 +222,7 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>) {
 				0.0, 1.0,
 				0.5 - size / 2.0,
 				0.5 + size / 2.0,
-				1.0 / (hit.dist * hit.dist * 0.1),
+				1.0 / (1.0 + hit.dist * hit.dist * 0.1),
 			);
 		}
 	}

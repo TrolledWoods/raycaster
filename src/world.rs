@@ -37,9 +37,31 @@ impl World {
 					b'o' => Some(Tile::new(TileKind::Window)),
 					b'.' => {
 						world.insert_entity(Entity {
-							vel: Vec2::new(1.0, (x as f32 / 20.0).sin()),
 							move_drag: 0.0,
+							vel: Vec2::new(0.1, 0.1),
 							.. Entity::new(Vec2::new(x as f32 + 0.3, y as f32 + 0.3), 0.2, 2)
+						});
+						world.insert_entity(Entity {
+							move_drag: 0.0,
+							vel: Vec2::new(0.1, 0.1),
+							.. Entity::new(Vec2::new(x as f32 + 0.7, y as f32 + 0.3), 0.2, 2)
+						});
+						world.insert_entity(Entity {
+							move_drag: 0.0,
+							vel: Vec2::new(0.1, 0.1),
+							.. Entity::new(Vec2::new(x as f32 + 0.7, y as f32 + 0.7), 0.2, 2)
+						});
+						world.insert_entity(Entity {
+							move_drag: 0.0,
+							vel: Vec2::new(0.1, 0.1),
+							.. Entity::new(Vec2::new(x as f32 + 0.3, y as f32 + 0.7), 0.2, 2)
+						});
+						None
+					}
+					b'r' => {
+						world.insert_entity(Entity {
+							texture_size: 1.0,
+							.. Entity::new(Vec2::new(x as f32 + 0.5, y as f32 + 0.5), 1.0, 3)
 						});
 						None
 					}
