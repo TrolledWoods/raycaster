@@ -27,14 +27,56 @@ fn main() {
 	let mut world = world::World::new(&[
 		b"###################",
 		b"#                 #",
-		b"###################",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
+		b"#                 #",
 		b"# ..    ..    ..  #",
 		b"#    ..    ..     #",
 		b"# ..    ..    ..  #",
-		b"################  #",
-		b"# r r r r r r r   #",
 		b"#                 #",
-		b"# r r r r r r r   #",
+		b"#                 #",
+		b"# ..    ..    ..  #",
+		b"#    ..    ..     #",
+		b"# ..    ..    ..  #",
+		b"#                 #",
+		b"#                 #",
+		b"# ..    ..    ..  #",
+		b"#    ..    ..     #",
+		b"# ..    ..    ..  #",
+		b"#                 #",
+		b"#                 #",
+		b"# ..    ..    ..  #",
+		b"#    ..    ..     #",
+		b"# ..    ..    ..  #",
+		b"# ##############oo#",
+		b"#             r   #",
+		b"#                 #",
+		b"#                 #",
 		b"###################",
 	]);
 	let player_id = world.insert_entity(Entity {
@@ -65,7 +107,7 @@ fn main() {
 	let mut frame_rate_index = 0;
 	let mut last_frame_time = 1.0;
 
-	let thread_pool = threading::ThreadPool::new(4);
+	let mut thread_pool = threading::ThreadPool::new(4);
     while window.is_open() && !window.is_key_down(Key::F4) {
 		let (width, height) = window.get_size();
 		let aspect = height as f32 / width as f32;
@@ -126,7 +168,7 @@ fn main() {
 					dx: diff.x,
 					dy: diff.y,
 					max_distance: 1.0,
-				}, |_, x, y, _, _| if world.tiles.tile_is_colliding(x, y) {
+				}, |_, x, y, _, _, _| if world.tiles.tile_is_colliding(x, y) {
 					draw = false;
 					false
 				} else {

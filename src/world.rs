@@ -60,7 +60,8 @@ impl World {
 					}
 					b'r' => {
 						world.insert_entity(Entity {
-							texture_size: 1.0,
+							texture_size: 2.0,
+							y_pos: 1.0,
 							.. Entity::new(Vec2::new(x as f32 + 0.5, y as f32 + 0.5), 1.0, 3)
 						});
 						None
@@ -235,6 +236,7 @@ pub struct TileGraphics {
 pub struct Tile {
 	pub kind: TileKind,
 	pub entities_inside: Vec<EntityId>,
+	pub floor_gfx: u16,
 }
 
 #[derive(Clone)]
@@ -248,6 +250,7 @@ impl Tile {
 	pub fn new(kind: TileKind) -> Self {
 		Tile {
 			kind,
+			floor_gfx: 3,
 			entities_inside: Vec::new(),
 		}
 	}
@@ -273,6 +276,7 @@ pub struct Entity {
 	pub pos: Vec2,
 	pub vel: Vec2,
 	pub move_drag: f32,
+	pub y_pos: f32,
 	pub rot: f32,
 	pub size: f32,
 	pub texture: u16,
@@ -285,6 +289,7 @@ impl Entity {
 			pos,
 			vel: Vec2::zero(),
 			move_drag: 1.0,
+			y_pos: 0.5,
 			rot: 0.0,
 			size,
 			texture,
