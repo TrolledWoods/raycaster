@@ -84,6 +84,6 @@ fn dim_color(color: [u8; 4], dim_factor: f32) -> [u8; 4] {
 		(color[0] as f32 * dim_factor) as u8,
 		(color[1] as f32 * dim_factor) as u8,
 		(color[2] as f32 * dim_factor) as u8,
-		color[3],
+		(color[3] as f32 * dim_factor) as u8,
 	]
 }

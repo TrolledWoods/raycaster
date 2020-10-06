@@ -3,11 +3,15 @@ use std::time::Duration;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use crate::world::World;
+use crate::world::{World, Tile};
 use crate::texture::Textures;
 use crate::raycast::{raycast, Raycast};
 use crate::render::ImageColumn;
 use crate::{Vec2, Mat2};
+
+// TODO: It's weird to have rendering in the threading file, so,
+// either; make this more generic and move the rendering part somewhere else
+// or    ; include the thread pool in the renderer.
 
 const SPLIT_SIZE: usize = 64;
 
@@ -126,6 +130,7 @@ impl ThreadPool {
 #[derive(Clone, Copy)]
 struct HitData {
 	dist: f32,
+	size: f32,
 	uv: f32,
 	texture_id: u16,
 }
@@ -144,11 +149,13 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>) {
 	let textures = &*textures;
 
 	for x in 0..width {
-		let fx = ((x + x_offset) as f32 / stride as f32 - 0.5) / aspect;
-		let offset = cam_matrix * Vec2::new(-fx, 1.0);
+		let fx = (0.5 - (x + x_offset) as f32 / stride as f32) / aspect;
+		let offset = cam_matrix * Vec2::new(fx, 1.0);
+
+		let inv_cam_matrix = crate::inverse_mat2(cam_matrix);
 
 		hits.clear();
-		let mut prev = None;
+		let mut prev: Option<&Tile> = None;
 		raycast(Raycast {
 				x: cam_pos.x,
 				y: cam_pos.y,
@@ -166,10 +173,27 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>) {
 									dist,
 									uv: off_x + off_y, 
 									texture_id: graphics.texture,
+									size: 1.0,
 								});
 								graphics.is_transparent
 							}
-							None => true
+							None => {
+								for &entity_id in tile.entities_inside.iter() {
+									let entity = world.get_entity(entity_id).unwrap();
+
+									let rel_entity_pos = inv_cam_matrix * (entity.pos - cam_pos);
+									let hit_x = 0.5 + (rel_entity_pos.x - fx * rel_entity_pos.y) / entity.texture_size;
+									if hit_x >= 0.0 && hit_x < 1.0 {
+										hits.push(HitData {
+											dist: rel_entity_pos.y,
+											uv: hit_x,
+											texture_id: entity.texture,
+											size: entity.texture_size,
+										});
+									}
+								}
+								true
+							}
 						}
 					}
 					None => true
@@ -181,7 +205,7 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>) {
 
 		let mut column = ImageColumn::from_raw(buffer.add(x), stride, height);
 		for hit in hits.iter().rev() {
-			let size = 1.0f32 / (0.0000001 + hit.dist);
+			let size = (1.0f32 / (0.0000001 + hit.dist)) * hit.size;
 			column.draw_partial_image(textures.get(hit.texture_id), 
 				(hit.uv * 32.0).clamp(0.0, 31.0) as u32,
 				0.0, 1.0,
