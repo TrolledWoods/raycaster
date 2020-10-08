@@ -8,11 +8,10 @@ mod texture;
 mod threading;
 mod render;
 mod float_range;
+mod random;
 
 type Vec2 = vek::vec::repr_simd::Vec2<f32>;
 type Mat2 = vek::mat::repr_simd::column_major::Mat2<f32>;
-
-use world::Entity;
 
 fn main() {
 	let textures = texture::Textures::create(vec![
@@ -20,69 +19,16 @@ fn main() {
 		image::open("assets/window.png").unwrap().into_rgba(),
 		image::open("assets/evil.png").unwrap().into_rgba(),
 		image::open("assets/rick.png").unwrap().into_rgba(),
+		image::open("assets/floor.png").unwrap().into_rgba(),
 	]);
 
     let mut buffer: Vec<u32> = Vec::new();
 
-	let mut world = world::World::new(&[
-		b"###################",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"#                 #",
-		b"# ..    ..    ..  #",
-		b"#    ..    ..     #",
-		b"# ..    ..    ..  #",
-		b"#                 #",
-		b"#                 #",
-		b"# ..    ..    ..  #",
-		b"#    ..    ..     #",
-		b"# ..    ..    ..  #",
-		b"#                 #",
-		b"#                 #",
-		b"# ..    ..    ..  #",
-		b"#    ..    ..     #",
-		b"# ..    ..    ..  #",
-		b"#                 #",
-		b"#                 #",
-		b"# ..    ..    ..  #",
-		b"#    ..    ..     #",
-		b"# ..    ..    ..  #",
-		b"# ##############oo#",
-		b"#             r   #",
-		b"#                 #",
-		b"#                 #",
-		b"###################",
-	]);
-	let player_id = world.insert_entity(Entity {
-		texture_size: 0.0,
-		.. Entity::new(Vec2::one() * 5.0, 0.3, 1)
-	});
+	let mut random = random::Random::new();
+	let (player_id, mut world) = world::generate::WorldGenerator::new(100, 100)
+		.generate(&mut random, Vec2::one() * 2.5);
+
+	world.to_image("output_maze.png");	
 
     let mut window = Window::new(
         "Raycaster",

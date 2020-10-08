@@ -248,16 +248,16 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut V
 
 		let mut column = ImageColumn::from_raw(buffer.add(x), stride, height);
 
-		for &FloorGfx { from_dist, to_dist, texture_id, from_uv, to_uv } in floor_gfx.iter() {
-			let from_dist_size = 1.0f32 / (0.0000001 + from_dist);
-			let to_dist_size   = 1.0f32 / (0.0000001 + to_dist);
+		// for &FloorGfx { from_dist, to_dist, texture_id, from_uv, to_uv } in floor_gfx.iter() {
+		// 	let from_dist_size = 1.0f32 / (0.0000001 + from_dist);
+		// 	let to_dist_size   = 1.0f32 / (0.0000001 + to_dist);
 
-			column.draw_uv_row(textures.get(texture_id),
-				to_uv, from_uv,
-				0.5 + to_dist_size * 0.5, 0.5 + from_dist_size * 0.5,
-				1.0 / (1.0 + from_dist * from_dist * 0.1),
-			);
-		}
+		// 	column.draw_uv_row(textures.get(texture_id),
+		// 		to_uv, from_uv,
+		// 		0.5 + to_dist_size * 0.5, 0.5 + from_dist_size * 0.5,
+		// 		1.0 / (1.0 + from_dist * from_dist * 0.1),
+		// 	);
+		// }
 
 		for hit in hits.iter().rev() {
 			let dist_size = 1.0f32 / (0.0000001 + hit.dist);

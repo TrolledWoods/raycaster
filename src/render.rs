@@ -28,13 +28,13 @@ impl<'a> ImageColumn<'a> {
 		}
 
 		let pos_y_start = if pos_y_start < 0.0 {
-			uv_start = Vec2::lerp(uv_start, uv_end, -pos_y_start / (pos_y_end - pos_y_start));
+			uv_start = Vec2::lerp_unclamped(uv_start, uv_end, -pos_y_start / (pos_y_end - pos_y_start));
 			0.0
 		} else {
 			pos_y_start
 		};
 		let pos_y_end = if pos_y_end > 1.0 {
-			uv_end = Vec2::lerp(uv_end, uv_start, (pos_y_end - 1.0) / (pos_y_end - pos_y_start));
+			uv_end = Vec2::lerp_unclamped(uv_end, uv_start, (pos_y_end - 1.0) / (pos_y_end - pos_y_start));
 			1.0
 		} else {
 			pos_y_end
@@ -44,11 +44,11 @@ impl<'a> ImageColumn<'a> {
 		for index in (pos_y_start * self.height as f32) as usize .. 
 					((pos_y_end * self.height as f32) as usize).min(self.height - 1) {
 			let factor = (index as f32 - pos_y_start * self.height as f32) / size;
-			let mut lerped = Vec2::lerp(uv_start, uv_end, factor);
+			let mut lerped = Vec2::lerp_unclamped(uv_start, uv_end, factor);
 			lerped.x = lerped.x - lerped.x.floor();
 			lerped.y = lerped.y - lerped.y.floor();
 
-			let pix = image.get_pixel((lerped.x * 32.0) as u32, (lerped.y * 32.0) as u32);
+			let pix = image.get_pixel((lerped.x * image.width() as f32) as u32, (lerped.y * image.height() as f32) as u32);
 			let dimmed = dim_color(pix.channels4(), dimming);
 
 			unsafe {

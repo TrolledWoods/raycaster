@@ -1,3 +1,5 @@
+pub mod generate;
+
 use std::collections::HashMap;
 use std::num::NonZeroU32;
 
@@ -134,6 +136,26 @@ impl World {
 		}
 	}
 
+	pub fn to_image(&self, file: &str) {
+		use image::{ImageBuffer, Pixel, Rgba};
+		
+		let mut image = ImageBuffer::<Rgba<u8>, Vec<u8>>::new(self.tiles.width as u32, self.tiles.height as u32);
+
+		for y in 0..self.tiles.width {
+			for x in 0..self.tiles.height {
+				let (r, g, b, a) = match self.tiles.get(x as isize, y as isize).unwrap().kind {
+					TileKind::Floor => (0, 0, 0, 255),
+					TileKind::Wall => (255, 255, 255, 255),
+					TileKind::Window => (255, 100, 100, 255),
+				};
+
+				let pixel = Pixel::from_channels(r, g, b, a);
+				image.put_pixel(x as u32, y as u32, pixel);
+			}
+		}
+
+		image.save(file).unwrap();
+	}
 }
 
 pub struct TileMap {
@@ -250,7 +272,7 @@ impl Tile {
 	pub fn new(kind: TileKind) -> Self {
 		Tile {
 			kind,
-			floor_gfx: 3,
+			floor_gfx: 4,
 			entities_inside: Vec::new(),
 		}
 	}
