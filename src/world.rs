@@ -90,7 +90,7 @@ impl World {
 	}
 
 	pub fn simulate_physics(&mut self, time_step: f32) {
-		for (entity_id, entity) in self.entities.iter_mut() {
+		for entity in self.entities.values_mut() {
 			entity.pos.x += entity.vel.x * time_step;
 			if self.tiles.square_is_colliding(entity.pos, entity.size) {
 				entity.pos.x -= entity.vel.x * time_step;

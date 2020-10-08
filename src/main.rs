@@ -20,7 +20,9 @@ fn main() {
 
 	let mut random = random::Random::new();
 	let (player_id, mut world) =
-		world::generate::WorldGenerator::new(100, 100).generate(&mut random, Vec2::one() * 102.5);
+		world::generate::WorldGenerator::new(100, 100, "assets\\room_prefabs.txt")
+			.unwrap()
+			.generate(&mut random, Vec2::one() * 102.5);
 
 	world.to_image("output_maze.png");
 

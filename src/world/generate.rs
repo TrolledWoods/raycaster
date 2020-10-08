@@ -8,21 +8,6 @@ use std::num::NonZeroU32;
 const ROOM_WIDTH: usize = 4;
 const ROOM_HEIGHT: usize = 4;
 
-#[allow(non_upper_case_globals)]
-const Fa: GenTile = GenTile::new(GenTileKind::Floor);
-#[allow(non_upper_case_globals)]
-const Wu: GenTile = GenTile::new(GenTileKind::Wall).change_if(GenTileKind::Floor, Direction::Up);
-#[allow(non_upper_case_globals)]
-const Wd: GenTile = GenTile::new(GenTileKind::Wall).change_if(GenTileKind::Floor, Direction::Down);
-#[allow(non_upper_case_globals)]
-const Wl: GenTile = GenTile::new(GenTileKind::Wall).change_if(GenTileKind::Floor, Direction::Left);
-#[allow(non_upper_case_globals)]
-const Wr: GenTile = GenTile::new(GenTileKind::Wall).change_if(GenTileKind::Floor, Direction::Right);
-#[allow(non_upper_case_globals)]
-const Wa: GenTile = GenTile::new(GenTileKind::Wall);
-#[allow(non_upper_case_globals)]
-const Ga: GenTile = GenTile::new(GenTileKind::Window);
-
 #[derive(Clone)]
 pub enum GenTileKind {
 	Floor,
@@ -45,23 +30,28 @@ impl GenTile {
 		}
 	}
 
-	pub const fn change_if(mut self, kind: GenTileKind, dir: Direction) -> Self {
+	pub fn change_if(&mut self, kind: GenTileKind, dir: Direction) {
 		self.change_if = Some((kind, dir));
-		self
 	}
 }
 
 pub struct WorldGenerator {
 	n_rooms_width: usize,
 	n_rooms_height: usize,
+	prefabs: Vec<RoomPrefab>,
 }
 
 impl WorldGenerator {
-	pub fn new(n_rooms_width: usize, n_rooms_height: usize) -> Self {
-		Self {
+	pub fn new(
+		n_rooms_width: usize,
+		n_rooms_height: usize,
+		prefabs_path: &str,
+	) -> Result<Self, &'static str> {
+		Ok(Self {
 			n_rooms_width,
 			n_rooms_height,
-		}
+			prefabs: load_prefabs_from_path(prefabs_path)?,
+		})
 	}
 
 	pub fn generate(&self, random: &mut Random, start: Vec2) -> (EntityId, World) {
@@ -101,70 +91,7 @@ impl WorldGenerator {
 			)
 			.unwrap() = Some(Room::new(0, 0, 0));
 
-		let room_prefabs = vec![
-			RoomPrefab {
-				chance: 5.0,
-				tiles: vec![
-					Wa, Wu, Wu, Wa, Wl, Fa, Fa, Wr, Wl, Fa, Fa, Wr, Wa, Wd, Wd, Wa,
-				],
-				n_rooms_width: 1,
-				n_rooms_height: 1,
-			},
-			RoomPrefab {
-				chance: 0.2,
-				tiles: vec![
-					Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa, Wl, Fa, Fa, Fa,
-					Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr, Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa,
-					Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr, Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa,
-					Fa, Fa, Fa, Wa, Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa,
-					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr, Wl, Fa, Fa, Fa,
-					Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr, Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa,
-					Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa, Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa, Ga, Fa, Ga, Fa,
-					Fa, Fa, Fa, Wa, Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
-					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr, Wa, Fa, Fa, Fa,
-					Fa, Fa, Ga, Fa, Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa, Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa,
-					Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa, Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa,
-					Fa, Fa, Fa, Wr, Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
-					Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa, Wa, Fa, Fa, Fa,
-					Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa, Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa,
-					Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr, Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa,
-					Fa, Fa, Fa, Wr, Wa, Wd, Wd, Wa, Wa, Wd, Wd, Wa, Wa, Wd, Wd, Wa, Wa, Wd, Wd, Wa,
-				],
-				n_rooms_width: 4,
-				n_rooms_height: 4,
-			},
-			RoomPrefab {
-				chance: 1.0,
-				tiles: vec![
-					Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa, Wl, Fa, Fa, Ga, Fa, Fa, Fa, Wr, Wl, Fa, Fa, Ga,
-					Fa, Fa, Fa, Wr, Wa, Fa, Fa, Ga, Fa, Fa, Fa, Wa, Wa, Fa, Fa, Fa, Fa, Fa, Fa, Wa,
-					Wl, Fa, Fa, Ga, Fa, Fa, Fa, Wr, Wl, Fa, Fa, Ga, Fa, Fa, Fa, Wr, Wa, Wd, Wd, Wa,
-					Wa, Wd, Wd, Wa,
-				],
-				n_rooms_width: 2,
-				n_rooms_height: 2,
-			},
-			RoomPrefab {
-				chance: 3.0,
-				tiles: vec![
-					Wa, Wu, Ga, Wa, Wl, Fa, Fa, Wr, Ga, Fa, Fa, Ga, Wa, Fa, Fa, Wa, Wa, Fa, Fa, Wa,
-					Wl, Fa, Fa, Wr, Ga, Fa, Fa, Ga, Wa, Wd, Ga, Wa,
-				],
-				n_rooms_width: 1,
-				n_rooms_height: 2,
-			},
-			RoomPrefab {
-				chance: 1.0,
-				tiles: vec![
-					Wa, Wu, Ga, Wa, Wl, Fa, Fa, Wr, Ga, Fa, Ga, Ga, Wa, Fa, Ga, Wa, Wa, Fa, Wr, Wr,
-					Wl, Fa, Wr, Wr, Ga, Fa, Fa, Ga, Wa, Wd, Ga, Wa,
-				],
-				n_rooms_width: 1,
-				n_rooms_height: 2,
-			},
-		];
-
-		let total_prefab_chance: f32 = room_prefabs.iter().map(|v| v.chance).sum();
+		let total_prefab_chance: f32 = self.prefabs.iter().map(|v| v.chance).sum();
 
 		let mut empty_spots = Vec::new();
 		'main_generator: while !loose_ends.is_empty() {
@@ -175,7 +102,7 @@ impl WorldGenerator {
 
 			let mut room_we_want = random.get_float() * total_prefab_chance;
 			let mut wanted_prefab_id = 0;
-			for (i, prefab) in room_prefabs.iter().enumerate() {
+			for (i, prefab) in self.prefabs.iter().enumerate() {
 				room_we_want -= prefab.chance;
 
 				if room_we_want <= 0.0 {
@@ -183,7 +110,7 @@ impl WorldGenerator {
 					break;
 				}
 			}
-			let mut wanted_prefab = &room_prefabs[wanted_prefab_id];
+			let mut wanted_prefab = &self.prefabs[wanted_prefab_id];
 
 			empty_spots.clear();
 			rooms.find_empty_spot(
@@ -223,7 +150,7 @@ impl WorldGenerator {
 					}
 
 					wanted_prefab_id = 0;
-					wanted_prefab = &room_prefabs[wanted_prefab_id];
+					wanted_prefab = &self.prefabs[wanted_prefab_id];
 					(loose_end.from_x + off_x, loose_end.from_y + off_y)
 				}
 				_ => {
@@ -303,7 +230,7 @@ impl WorldGenerator {
 			for (room_x, room) in chunk.iter().enumerate() {
 				let room = room.as_ref().expect("Didn't fill the entire dungeon!?");
 
-				let room_data = &room_prefabs[room.room_id];
+				let room_data = &self.prefabs[room.room_id];
 
 				for tile_y in 0..ROOM_HEIGHT {
 					for tile_x in 0..ROOM_WIDTH {
@@ -582,4 +509,120 @@ impl Rooms {
 
 		true
 	}
+}
+
+fn load_prefabs_from_path(path: &str) -> Result<Vec<RoomPrefab>, &'static str> {
+	fn validate_room_prefab(prefab: &RoomPrefab) -> Result<(), &'static str> {
+		if prefab.n_rooms_width == 0 {
+			return Err("Prefab width cannot be zero");
+		}
+		if prefab.n_rooms_height == 0 {
+			return Err("Prefab height cannot be zero");
+		}
+		if prefab.tiles.len()
+			!= prefab.n_rooms_width * prefab.n_rooms_height * ROOM_WIDTH * ROOM_HEIGHT
+		{
+			return Err("Prefab tiles do not match up with with and height of room(make sure that width and height are divisible by ROOM_WIDTH and ROOM_HEIGHT");
+		}
+
+		Ok(())
+	}
+
+	let file_contents = std::fs::read_to_string(path).map_err(|_| "Couldn't load file")?;
+
+	let mut prefabs = Vec::new();
+	let mut current_prefab: Option<RoomPrefab> = None;
+
+	for line in file_contents
+		.lines()
+		.map(|line| line.trim())
+		.filter(|line| !line.is_empty())
+	{
+		let mut parts = line.split_whitespace();
+		match parts.next().unwrap() {
+			"--" => {
+				if let Some(mut prefab) = current_prefab.take() {
+					prefab.n_rooms_height = prefab
+						.tiles
+						.len()
+						.checked_div(prefab.n_rooms_width * ROOM_WIDTH * ROOM_HEIGHT)
+						.unwrap_or(0);
+
+					validate_room_prefab(&prefab)?;
+					prefabs.push(prefab);
+				}
+
+				let _name = parts.next().ok_or("Expected name of area");
+				current_prefab = Some(RoomPrefab {
+					chance: 0.0,
+					tiles: Vec::new(),
+					n_rooms_width: 0,
+					n_rooms_height: 0,
+				});
+			}
+			"-" => {
+				let prefab = current_prefab
+					.as_mut()
+					.ok_or("Can't set a property without an active room")?;
+				match parts.next().ok_or("Expected property name")? {
+					"chance" => {
+						prefab.chance = parts
+							.next()
+							.ok_or("Expected float after 'chance'")?
+							.parse::<f32>()
+							.map_err(|_| "Float after 'chance' is incorrectly formatted")?;
+					}
+					_ => return Err("Unknown property"),
+				}
+			}
+			body => {
+				let prefab = current_prefab
+					.as_mut()
+					.ok_or("Can't set tiles without an active room")?;
+
+				let mut body_chars = body.chars();
+				let mut width = 0;
+				while let Some(c) = body_chars.next() {
+					let mut gen_tile = match c {
+						'#' => GenTile::new(GenTileKind::Wall),
+						'o' => GenTile::new(GenTileKind::Window),
+						'.' => GenTile::new(GenTileKind::Floor),
+						'D' => GenTile::new(GenTileKind::Wall),
+						_ => return Err("Invalid tile character"),
+					};
+
+					match body_chars.next().ok_or("Expected tile modifier")? {
+						modifier if modifier == c => (),
+						'>' => gen_tile.change_if(GenTileKind::Floor, Direction::Right),
+						'<' => gen_tile.change_if(GenTileKind::Floor, Direction::Left),
+						'^' => gen_tile.change_if(GenTileKind::Floor, Direction::Up),
+						'v' => gen_tile.change_if(GenTileKind::Floor, Direction::Down),
+						_ => return Err("Invalid tile modifier"),
+					}
+
+					prefab.tiles.push(gen_tile);
+					width += 1;
+				}
+
+				if prefab.n_rooms_width == 0 {
+					prefab.n_rooms_width = width / ROOM_WIDTH;
+				} else if prefab.n_rooms_width * ROOM_WIDTH != width {
+					return Err("Widths don't match");
+				}
+			}
+		}
+	}
+
+	if let Some(mut prefab) = current_prefab.take() {
+		prefab.n_rooms_height = prefab
+			.tiles
+			.len()
+			.checked_div(prefab.n_rooms_width * ROOM_WIDTH * ROOM_HEIGHT)
+			.unwrap_or(0);
+
+		validate_room_prefab(&prefab)?;
+		prefabs.push(prefab);
+	}
+
+	Ok(prefabs)
 }
