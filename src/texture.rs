@@ -1,5 +1,5 @@
 macro_rules! create_textures {
-	($($name:ident = $file_name:tt),*) => {
+	($($name:ident = $file_name:tt),*,) => {
 		#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 		#[repr(u16)]
 		pub enum Texture {
@@ -17,7 +17,8 @@ create_textures!(
 	Window = "assets/window.png",
 	Evil = "assets/evil.png",
 	Rick = "assets/rick.png",
-	Floor = "assets/floor.png"
+	Floor = "assets/floor.png",
+	Fungus = "assets/fungus.png",
 );
 
 pub struct Textures {

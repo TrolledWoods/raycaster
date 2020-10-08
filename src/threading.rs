@@ -249,25 +249,26 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut V
 
 		let mut column = ImageColumn::from_raw(buffer.add(x), stride, height);
 
-		// for &FloorGfx { from_dist, to_dist, texture_id, from_uv, to_uv } in floor_gfx.iter() {
-		// 	let from_dist_size = 1.0f32 / (0.0000001 + from_dist);
-		// 	let to_dist_size   = 1.0f32 / (0.0000001 + to_dist);
+		for &FloorGfx { from_dist, to_dist, texture_id, from_uv, to_uv } in floor_gfx.iter().take(0) {
+			let from_dist_size = 1.0f32 / (0.0000001 + from_dist);
+			let to_dist_size   = 1.0f32 / (0.0000001 + to_dist);
 
-		// 	column.draw_uv_row(textures.get(texture_id),
-		// 		to_uv, from_uv,
-		// 		0.5 + to_dist_size * 0.5, 0.5 + from_dist_size * 0.5,
-		// 		1.0 / (1.0 + from_dist * from_dist * 0.1),
-		// 	);
-		// }
+			column.draw_uv_row(textures.get(texture_id),
+				to_uv, from_uv,
+				0.5 + to_dist_size * 0.5, 0.5 + from_dist_size * 0.5,
+				1.0 / (1.0 + from_dist * from_dist * 0.1),
+			);
+		}
 
 		for hit in hits.iter().rev() {
 			let dist_size = 1.0f32 / (0.0000001 + hit.dist);
-			column.draw_partial_image(textures.get(hit.texture_id), 
-				(hit.uv * 32.0).clamp(0.0, 31.0) as u32,
+			let texture = textures.get(hit.texture_id);
+			column.draw_partial_image(texture, 
+				((hit.uv * texture.height() as f32) as u32).clamp(0, texture.height() - 1),
 				0.0, 1.0,
 				0.5 - dist_size * 0.5 + dist_size * (hit.y_pos * (1.0 - hit.size)),
 				0.5 - dist_size * 0.5 + dist_size * (hit.y_pos * (1.0 - hit.size) + hit.size),
-				1.0 / (1.0 + hit.dist * hit.dist * 0.1),
+				1.0 / (1.0 + hit.dist * hit.dist * 0.4),
 			);
 		}
 	}

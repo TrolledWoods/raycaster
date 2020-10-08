@@ -16,7 +16,7 @@ impl Default for Raycast {
 			y: 0.0,
 			dx: 0.0,
 			dy: 0.0,
-			max_distance: 30.0,
+			max_distance: 10.0,
 		}
 	}
 }
