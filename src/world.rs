@@ -256,22 +256,14 @@ pub enum TileKind {
 
 impl Tile {
 	pub fn new(kind: TileKind, time: f32) -> Self {
-		Tile {
-			graphics: match kind {
-				TileKind::Floor => None,
-				TileKind::Wall => Some(TileGraphics {
-					texture: Animation::new_loop(Texture::Wall),
-					is_transparent: false,
-				}),
-				TileKind::Window => Some(TileGraphics {
-					texture: Animation::new_loop(Texture::Window),
-					is_transparent: true,
-				}),
-			},
-			kind,
+		let mut tile = Tile {
+			graphics: None,
+			kind: TileKind::Floor,
 			floor_gfx: Texture::Floor,
 			sprites_inside: Vec::new(),
-		}
+		};
+		tile.set_kind(kind);
+		tile
 	}
 
 	pub fn kind(&self) -> &TileKind {
@@ -282,7 +274,7 @@ impl Tile {
 		self.graphics = match kind {
 			TileKind::Floor => None,
 			TileKind::Wall => Some(TileGraphics {
-				texture: Animation::new_loop(Texture::Wall),
+				texture: Animation::new_loop(Texture::Door),
 				is_transparent: false,
 			}),
 			TileKind::Window => Some(TileGraphics {

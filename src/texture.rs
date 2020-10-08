@@ -75,7 +75,7 @@ impl Textures {
 							Ok(TextureInfo {
 								id,
 								n_animation_frames,
-								fps: total_time / n_animation_frames as f32,
+								fps: n_animation_frames as f32 / total_time,
 							})
 						}
 						false => {
@@ -115,7 +115,7 @@ impl Textures {
 			}
 		};
 
-		&self.images[texture.id]
+		&self.images[texture.id + frame]
 	}
 }
 
