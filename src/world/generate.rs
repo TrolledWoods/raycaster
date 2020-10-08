@@ -215,6 +215,15 @@ impl WorldGenerator {
 			let (room_x, room_y) = match empty_spots.len() {
 				0 => {
 					if !rooms.square_is_empty(loose_end.from_x + off_x, loose_end.from_y + off_y, 1, 1) {
+						if random.get_float() < 0.05 {
+							if let Some(room) = rooms.get_mut(loose_end.from_x + off_x, loose_end.from_y + off_y) {
+								*room.as_mut().unwrap()
+									.get_dir_mut(loose_end.direction.inverted()) = true;
+								*rooms.get_mut(loose_end.from_x, loose_end.from_y).unwrap()
+									.as_mut().unwrap()
+									.get_dir_mut(loose_end.direction) = true;
+							}
+						}
 						continue 'main_generator;
 					}
 

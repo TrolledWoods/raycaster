@@ -20,7 +20,7 @@ fn main() {
 
 	let mut random = random::Random::new();
 	let (player_id, mut world) = world::generate::WorldGenerator::new(500, 500)
-		.generate(&mut random, Vec2::one() * 2.5);
+		.generate(&mut random, Vec2::one() * 502.5);
 
 	world.to_image("output_maze.png");	
 
@@ -95,31 +95,6 @@ fn main() {
 			width, height, &mut buffer,
 			aspect
 		);
-
-		for (_, entity) in world.entities() {
-			let diff = entity.pos - cam_pos;
-			let inverted = inv_cam_matrix * diff;
-
-			if inverted.y >= 0.05 {
-				let mut draw = true;
-				raycast::raycast(raycast::Raycast {
-					x: cam_pos.x,
-					y: cam_pos.y,
-					dx: diff.x,
-					dy: diff.y,
-					max_distance: 1.0,
-				}, |_, x, y, _, _, _| if world.tiles.tile_is_colliding(x, y) {
-					draw = false;
-					false
-				} else {
-					true
-				});
-
-				if draw {
-					// &textures.textures[entity.texture]
-				}
-			}
-		}
 
 		frame_rate[frame_rate_index] = instant.elapsed().as_secs_f32();
 
