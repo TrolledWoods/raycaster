@@ -19,8 +19,8 @@ fn main() {
     let mut buffer: Vec<u32> = Vec::new();
 
 	let mut random = random::Random::new();
-	let (player_id, mut world) = world::generate::WorldGenerator::new(500, 500)
-		.generate(&mut random, Vec2::one() * 502.5);
+	let (player_id, mut world) = world::generate::WorldGenerator::new(100, 100)
+		.generate(&mut random, Vec2::one() * 102.5);
 
 	world.to_image("output_maze.png");	
 

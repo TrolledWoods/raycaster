@@ -322,7 +322,7 @@ impl WorldGenerator {
 
 						let kind = match gen_tile_kind {
 							GenTileKind::Floor => {
-								if random.get_float() <= 0.001 {
+								if random.get_float() <= 0.010 {
 									let pos = Vec2::new(
 										(room_x * ROOM_WIDTH + tile_x) as f32 + 0.5,
 										(room_y * ROOM_HEIGHT + tile_y) as f32 + 0.5
@@ -336,6 +336,13 @@ impl WorldGenerator {
 										),
 										.. Entity::new(pos, 0.3, Some(sprite))
 									});
+								}
+								for _ in 0 .. random.get_32() % 60 {
+									let pos = Vec2::new(
+										(room_x * ROOM_WIDTH + tile_x) as f32 + random.get_float(),
+										(room_y * ROOM_HEIGHT + tile_y) as f32 + random.get_float() 
+									);
+									world.insert_sprite(Texture::Rick, pos, random.get_float() * 0.1 + 0.1, 1.0);
 								}
 								TileKind::Floor
 							},
