@@ -2,6 +2,7 @@
 #![feature(clamp)]
 
 use minifb::{Key, Window, WindowOptions};
+mod alloc;
 mod float_range;
 mod random;
 mod raycast;
@@ -119,6 +120,12 @@ fn main() {
 				"{} seconds / {} fps (if no fps cap was applied)",
 				average,
 				1.0 / average
+			);
+			println!(
+				"{} allocations",
+				crate::alloc::ALLOCATOR
+					.allocations_count
+					.load(std::sync::atomic::Ordering::Relaxed)
 			);
 		}
 	}
