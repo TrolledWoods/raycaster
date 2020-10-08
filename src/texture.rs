@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::Path;
 
 macro_rules! create_textures {
@@ -103,16 +102,11 @@ impl Textures {
 
 	pub fn get_anim(&self, animation: &Animation, time: f32) -> &image::RgbaImage {
 		let texture = &self.textures[animation.texture as u16 as usize];
-		let n_frames = (time - animation.start_time) * texture.fps;
+		let n_frames = (time - animation.start_time) * texture.fps * animation.speed;
 
-		let frame = animation.start_frame + n_frames as usize;
 		let frame = match animation.kind {
-			AnimationKind::Looping => {
-				(animation.start_frame + n_frames as usize) % texture.n_animation_frames
-			}
-			AnimationKind::Clamped => {
-				(animation.start_frame + n_frames as usize).min(texture.n_animation_frames - 1)
-			}
+			AnimationKind::Looping => n_frames as usize % texture.n_animation_frames,
+			AnimationKind::Clamped => (n_frames as usize).min(texture.n_animation_frames - 1),
 		};
 
 		&self.images[texture.id + frame]
@@ -128,8 +122,8 @@ pub enum AnimationKind {
 #[derive(Clone)]
 pub struct Animation {
 	pub texture: Texture,
-	pub start_frame: usize,
 	pub start_time: f32,
+	pub speed: f32,
 	pub kind: AnimationKind,
 }
 
@@ -137,8 +131,8 @@ impl Animation {
 	pub fn new_loop(texture: Texture) -> Self {
 		Animation {
 			texture,
-			start_frame: 0,
 			start_time: 0.0,
+			speed: 1.0,
 			kind: AnimationKind::Looping,
 		}
 	}
@@ -146,9 +140,13 @@ impl Animation {
 	pub fn new_clamp(texture: Texture) -> Self {
 		Animation {
 			texture,
-			start_frame: 0,
+			speed: 1.0,
 			start_time: 0.0,
 			kind: AnimationKind::Clamped,
 		}
+	}
+
+	pub fn has_run_once(&self, time: f32) -> bool {
+		time - self.start_time <= self.texture.total_animation_time() / self.speed
 	}
 }

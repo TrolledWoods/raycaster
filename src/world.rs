@@ -126,9 +126,10 @@ impl World {
 		for y in 0..self.tiles.width {
 			for x in 0..self.tiles.height {
 				let (r, g, b, a) = match self.tiles.get(x as isize, y as isize).unwrap().kind {
-					TileKind::Floor => (0, 0, 0, 255),
-					TileKind::Wall => (255, 255, 255, 255),
-					TileKind::Window => (255, 100, 100, 255),
+					TileKind::Floor => (255, 200, 200, 255),
+					TileKind::Wall => (50, 50, 50, 255),
+					TileKind::Window => (50, 50, 75, 255),
+					TileKind::Door(_) => (100, 200, 200, 255),
 				};
 
 				let pixel = Pixel::from_channels(r, g, b, a);
@@ -190,20 +191,7 @@ impl TileMap {
 	}
 
 	pub fn square_is_colliding(&self, pos: Vec2, size: f32) -> bool {
-		let left = (pos.x - size).floor() as isize;
-		let right = (pos.x + size).floor() as isize;
-		let top = (pos.y - size).floor() as isize;
-		let bottom = (pos.y + size).floor() as isize;
-
-		for y in top..=bottom {
-			for x in left..=right {
-				if self.tile_is_colliding(x, y) {
-					return true;
-				}
-			}
-		}
-
-		false
+		tiles_in_square(pos, size).any(|(x, y)| self.tile_is_colliding(x, y))
 	}
 
 	pub fn tile_is_colliding(&self, x: isize, y: isize) -> bool {
@@ -252,10 +240,11 @@ pub enum TileKind {
 	Floor,
 	Wall,
 	Window,
+	Door(bool),
 }
 
 impl Tile {
-	pub fn new(kind: TileKind, time: f32) -> Self {
+	pub fn new(kind: TileKind) -> Self {
 		let mut tile = Tile {
 			graphics: None,
 			kind: TileKind::Floor,
@@ -274,11 +263,19 @@ impl Tile {
 		self.graphics = match kind {
 			TileKind::Floor => None,
 			TileKind::Wall => Some(TileGraphics {
-				texture: Animation::new_loop(Texture::Door),
+				texture: Animation::new_loop(Texture::Wall),
 				is_transparent: false,
 			}),
 			TileKind::Window => Some(TileGraphics {
 				texture: Animation::new_loop(Texture::Window),
+				is_transparent: true,
+			}),
+			TileKind::Door(true) => Some(TileGraphics {
+				texture: Animation::new_clamp(Texture::Door),
+				is_transparent: true,
+			}),
+			TileKind::Door(false) => Some(TileGraphics {
+				texture: Animation::new_clamp(Texture::Door),
 				is_transparent: true,
 			}),
 		};
@@ -294,6 +291,7 @@ impl Tile {
 			TileKind::Floor => false,
 			TileKind::Wall => true,
 			TileKind::Window => true,
+			TileKind::Door(open) => !open,
 		}
 	}
 }
@@ -324,6 +322,7 @@ pub struct Entity {
 	pub rot: f32,
 	pub size: f32,
 	pub sprite: Option<SpriteId>,
+	pub can_open_doors: bool,
 }
 
 impl Entity {
@@ -335,6 +334,15 @@ impl Entity {
 			rot: 0.0,
 			size,
 			sprite,
+			can_open_doors: true,
 		}
 	}
+}
+
+pub fn tiles_in_square(pos: Vec2, half_size: f32) -> impl Iterator<Item = (isize, isize)> {
+	let left = (pos.x - half_size) as isize;
+	let right = (pos.x + half_size) as isize;
+	let up = (pos.y - half_size) as isize;
+	let down = (pos.y + half_size) as isize;
+	(left..=right).flat_map(move |x| (up..=down).map(move |y| (x, y)))
 }

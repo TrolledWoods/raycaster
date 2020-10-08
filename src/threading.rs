@@ -297,7 +297,7 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut V
 				1.0,
 				0.5 - dist_size * 0.5 + dist_size * (hit.y_pos * (1.0 - hit.size)),
 				0.5 - dist_size * 0.5 + dist_size * (hit.y_pos * (1.0 - hit.size) + hit.size),
-				1.0 / (1.0 + hit.dist * hit.dist * 0.4),
+				1.0 / (1.0 + hit.dist * hit.dist * 0.2),
 			);
 		}
 	}

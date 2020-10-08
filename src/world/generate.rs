@@ -28,6 +28,7 @@ pub enum GenTileKind {
 	Floor,
 	Wall,
 	Window,
+	Door,
 }
 
 #[derive(Clone)]
@@ -288,7 +289,7 @@ impl WorldGenerator {
 				width: self.n_rooms_width * ROOM_WIDTH,
 				height: self.n_rooms_height * ROOM_HEIGHT,
 				tiles: vec![
-					Tile::new(TileKind::Floor, 0.0);
+					Tile::new(TileKind::Floor);
 					self.n_rooms_width * self.n_rooms_height * ROOM_WIDTH * ROOM_HEIGHT
 				],
 			},
@@ -318,6 +319,7 @@ impl WorldGenerator {
 						}
 
 						let kind = match gen_tile_kind {
+							GenTileKind::Door => todo!(),
 							GenTileKind::Floor => {
 								if random.get_float() <= 0.010 {
 									let pos = Vec2::new(
@@ -355,10 +357,14 @@ impl WorldGenerator {
 							GenTileKind::Window => TileKind::Window,
 						};
 
-						world.tiles.tiles[(room_y * ROOM_HEIGHT + tile_y)
+						let tile = &mut world.tiles.tiles[(room_y * ROOM_HEIGHT + tile_y)
 							* ROOM_WIDTH * self.n_rooms_width
-							+ (room_x * ROOM_WIDTH + tile_x)]
-							.set_kind(kind);
+							+ (room_x * ROOM_WIDTH + tile_x)];
+						tile.set_kind(kind);
+						tile.graphics.as_mut().map(|graphic| {
+							graphic.texture.start_time = random.get_float() * 2.0;
+							graphic.texture.speed = random.get_float() * 3.0 + 0.5;
+						});
 					}
 				}
 			}

@@ -41,7 +41,6 @@ fn main() {
 
 	let mut cam_pos = Vec2::new(5.0, 5.0);
 	let mut cam_matrix = Mat2::zero();
-	let mut inv_cam_matrix = Mat2::zero();
 
 	let mut frame_rate = [0f32; 50];
 	let mut frame_rate_index = 0;
@@ -67,7 +66,6 @@ fn main() {
 			}
 
 			cam_matrix = Mat2::identity().rotated_z(player.rot);
-			inv_cam_matrix = Mat2::identity().rotated_z(-player.rot);
 
 			let player_speed = 0.2;
 			if window.is_key_down(Key::A) {
