@@ -89,16 +89,22 @@ impl World {
 		self.sprites.get(&id.0)
 	}
 
-	pub fn simulate_physics(&mut self, time_step: f32) {
+	pub fn simulate_physics(&mut self, time_step: f32, world_time: f32) {
 		for entity in self.entities.values_mut() {
 			entity.pos.x += entity.vel.x * time_step;
 			if self.tiles.square_is_colliding(entity.pos, entity.size) {
+				if entity.can_open_doors {
+					self.tiles.touch_event(entity, world_time);
+				}
 				entity.pos.x -= entity.vel.x * time_step;
 				entity.vel.x *= -1.0;
 			}
 
 			entity.pos.y += entity.vel.y * time_step;
 			if self.tiles.square_is_colliding(entity.pos, entity.size) {
+				if entity.can_open_doors {
+					self.tiles.touch_event(entity, world_time);
+				}
 				entity.pos.y -= entity.vel.y * time_step;
 				entity.vel.y *= -1.0;
 			}
@@ -148,6 +154,22 @@ pub struct TileMap {
 }
 
 impl TileMap {
+	fn touch_event(&mut self, entity: &mut Entity, world_time: f32) {
+		for (x, y) in tiles_in_square(entity.pos, entity.size) {
+			match self.get_mut(x, y) {
+				Some(
+					tile @ Tile {
+						kind: TileKind::Door(false),
+						..
+					},
+				) if entity.can_open_doors => {
+					*tile = Tile::new_with_time(TileKind::Door(true), world_time);
+				}
+				_ => (),
+			}
+		}
+	}
+
 	pub fn move_sprite(&mut self, sprite_id: SpriteId, sprite: &mut Sprite, new_pos: Vec2) {
 		let size = sprite.size;
 
@@ -245,13 +267,17 @@ pub enum TileKind {
 
 impl Tile {
 	pub fn new(kind: TileKind) -> Self {
+		Self::new_with_time(kind, 0.0)
+	}
+
+	pub fn new_with_time(kind: TileKind, time: f32) -> Self {
 		let mut tile = Tile {
 			graphics: None,
 			kind: TileKind::Floor,
 			floor_gfx: Texture::Floor,
 			sprites_inside: Vec::new(),
 		};
-		tile.set_kind(kind);
+		tile.set_kind_with_time(kind, time);
 		tile
 	}
 
@@ -260,22 +286,26 @@ impl Tile {
 	}
 
 	pub fn set_kind(&mut self, kind: TileKind) {
+		self.set_kind_with_time(kind, 0.0);
+	}
+
+	pub fn set_kind_with_time(&mut self, kind: TileKind, time: f32) {
 		self.graphics = match kind {
 			TileKind::Floor => None,
 			TileKind::Wall => Some(TileGraphics {
-				texture: Animation::new_loop(Texture::Wall),
+				texture: Animation::new_loop_with_time(Texture::Wall, time),
 				is_transparent: false,
 			}),
 			TileKind::Window => Some(TileGraphics {
-				texture: Animation::new_loop(Texture::Window),
+				texture: Animation::new_loop_with_time(Texture::Window, time),
 				is_transparent: true,
 			}),
 			TileKind::Door(true) => Some(TileGraphics {
-				texture: Animation::new_clamp(Texture::Door),
+				texture: Animation::new_clamp_with_time(Texture::Door, time),
 				is_transparent: true,
 			}),
 			TileKind::Door(false) => Some(TileGraphics {
-				texture: Animation::new_clamp(Texture::Door),
+				texture: Animation::new_clamp_with_time(Texture::DoorClose, time),
 				is_transparent: true,
 			}),
 		};

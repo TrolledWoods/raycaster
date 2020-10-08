@@ -246,9 +246,9 @@ impl WorldGenerator {
 						}
 
 						let kind = match gen_tile_kind {
-							GenTileKind::Door => todo!(),
+							GenTileKind::Door => TileKind::Door(false),
 							GenTileKind::Floor => {
-								if random.get_float() <= 0.010 {
+								if random.get_float() <= 0.001 {
 									let pos = Vec2::new(
 										(room_x * ROOM_WIDTH + tile_x) as f32 + 0.5,
 										(room_y * ROOM_HEIGHT + tile_y) as f32 + 0.5,
@@ -260,6 +260,7 @@ impl WorldGenerator {
 											(random.get_float() - 0.5) * 25.0,
 											(random.get_float() - 0.5) * 25.0,
 										),
+										can_open_doors: false,
 										..Entity::new(pos, 0.3, Some(sprite))
 									});
 								}
@@ -583,20 +584,20 @@ fn load_prefabs_from_path(path: &str) -> Result<Vec<RoomPrefab>, &'static str> {
 				let mut body_chars = body.chars();
 				let mut width = 0;
 				while let Some(c) = body_chars.next() {
-					let mut gen_tile = match c {
-						'#' => GenTile::new(GenTileKind::Wall),
-						'o' => GenTile::new(GenTileKind::Window),
-						'.' => GenTile::new(GenTileKind::Floor),
-						'D' => GenTile::new(GenTileKind::Wall),
+					let (mut gen_tile, alternate) = match c {
+						'#' => (GenTile::new(GenTileKind::Wall), GenTileKind::Floor),
+						'o' => (GenTile::new(GenTileKind::Window), GenTileKind::Floor),
+						'.' => (GenTile::new(GenTileKind::Floor), GenTileKind::Floor),
+						'D' => (GenTile::new(GenTileKind::Wall), GenTileKind::Door),
 						_ => return Err("Invalid tile character"),
 					};
 
 					match body_chars.next().ok_or("Expected tile modifier")? {
 						modifier if modifier == c => (),
-						'>' => gen_tile.change_if(GenTileKind::Floor, Direction::Right),
-						'<' => gen_tile.change_if(GenTileKind::Floor, Direction::Left),
-						'^' => gen_tile.change_if(GenTileKind::Floor, Direction::Up),
-						'v' => gen_tile.change_if(GenTileKind::Floor, Direction::Down),
+						'>' => gen_tile.change_if(alternate, Direction::Right),
+						'<' => gen_tile.change_if(alternate, Direction::Left),
+						'^' => gen_tile.change_if(alternate, Direction::Up),
+						'v' => gen_tile.change_if(alternate, Direction::Down),
 						_ => return Err("Invalid tile modifier"),
 					}
 

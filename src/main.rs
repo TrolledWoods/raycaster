@@ -84,7 +84,7 @@ fn main() {
 			}
 		}
 
-		world.simulate_physics(last_frame_time);
+		world.simulate_physics(last_frame_time, elapsed_time);
 
 		if let Some(player) = world.get_entity(player_id) {
 			cam_pos = player.pos;

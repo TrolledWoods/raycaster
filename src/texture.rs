@@ -30,6 +30,7 @@ create_textures!(
 	Floor = "assets\\floor" 1.0,
 	Fungus = "assets\\fungus" 1.0,
 	Door = "assets\\door" 1.0,
+	DoorClose = "assets\\door_close" 1.0,
 );
 
 struct TextureInfo {
@@ -128,6 +129,24 @@ pub struct Animation {
 }
 
 impl Animation {
+	pub fn new_loop_with_time(texture: Texture, start_time: f32) -> Self {
+		Animation {
+			texture,
+			start_time,
+			speed: 1.0,
+			kind: AnimationKind::Looping,
+		}
+	}
+
+	pub fn new_clamp_with_time(texture: Texture, start_time: f32) -> Self {
+		Animation {
+			texture,
+			speed: 1.0,
+			start_time,
+			kind: AnimationKind::Clamped,
+		}
+	}
+
 	pub fn new_loop(texture: Texture) -> Self {
 		Animation {
 			texture,
