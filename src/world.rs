@@ -9,11 +9,17 @@ use crate::texture::Texture;
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EntityId(NonZeroU32);
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SpriteId(NonZeroU32);
+
 pub struct World {
 	pub tiles: TileMap,
 
 	entities: HashMap<NonZeroU32, Entity>,
 	entity_id_counter: NonZeroU32,
+
+	sprites: HashMap<NonZeroU32, Sprite>,
+	sprite_id_counter: NonZeroU32,
 }
 
 impl World {
@@ -21,24 +27,35 @@ impl World {
 		let id = self.entity_id_counter;
 		self.entity_id_counter = NonZeroU32::new(self.entity_id_counter.get() + 1).unwrap();
 
-		let texture_x = entity.pos.x;
-		let texture_y = entity.pos.y;
-		let texture_size = entity.texture_size;
-
 		let old = self.entities.insert(id, entity);
 		assert!(old.is_none());
+		EntityId(id)
+	}
 
-		for y in (texture_y - texture_size / 2.0).floor() as isize ..=
-				 (texture_y + texture_size / 2.0).floor() as isize {
-			for x in (texture_x - texture_size / 2.0).floor() as isize ..=
-					 (texture_x + texture_size / 2.0).floor() as isize {
+	pub fn insert_sprite(&mut self, texture: Texture, pos: Vec2, size: f32, y_pos: f32) -> SpriteId {
+		let sprite = Sprite { texture, pos, size, y_pos };
+
+		let id = self.sprite_id_counter;
+		self.sprite_id_counter = NonZeroU32::new(self.sprite_id_counter.get() + 1).unwrap();
+
+		let texture_x = sprite.pos.x;
+		let texture_y = sprite.pos.y;
+		let size = sprite.size;
+
+		let old = self.sprites.insert(id, sprite);
+		assert!(old.is_none());
+
+		for y in (texture_y - size / 2.0).floor() as isize ..=
+				 (texture_y + size / 2.0).floor() as isize {
+			for x in (texture_x - size / 2.0).floor() as isize ..=
+					 (texture_x + size / 2.0).floor() as isize {
 				if let Some(tile) = self.tiles.get_mut(x, y) {
-					tile.entities_inside.push(EntityId(id));
+					tile.sprites_inside.push(SpriteId(id));
 				}
 			}
 		}
 
-		EntityId(id)
+		SpriteId(id)
 	}
 
 	pub fn entities(&self) -> impl Iterator<Item = (EntityId, &Entity)> {
@@ -53,24 +70,33 @@ impl World {
 		self.entities.get_mut(&id.0)
 	}
 
+	pub fn get_sprite(&self, id: SpriteId) -> Option<&Sprite> {
+		self.sprites.get(&id.0)
+	}
+
 	pub fn simulate_physics(&mut self, time_step: f32) {
 		for (entity_id, entity) in self.entities.iter_mut() {
-			let mut new_pos = entity.pos;
-			new_pos.x += entity.vel.x * time_step;
-			if self.tiles.square_is_colliding(new_pos, entity.size) {
-				new_pos.x -= entity.vel.x * time_step;
+			entity.pos.x += entity.vel.x * time_step;
+			if self.tiles.square_is_colliding(entity.pos, entity.size) {
+				entity.pos.x -= entity.vel.x * time_step;
 				entity.vel.x *= -1.0;
 			}
 
-			new_pos.y += entity.vel.y * time_step;
-			if self.tiles.square_is_colliding(new_pos, entity.size) {
-				new_pos.y -= entity.vel.y * time_step;
+			entity.pos.y += entity.vel.y * time_step;
+			if self.tiles.square_is_colliding(entity.pos, entity.size) {
+				entity.pos.y -= entity.vel.y * time_step;
 				entity.vel.y *= -1.0;
 			}
 
 			entity.vel -= entity.vel * entity.move_drag * time_step;
 
-			self.tiles.move_entity(EntityId(*entity_id), entity, new_pos);
+			if let Some(sprite_id) = entity.sprite {
+				self.tiles.move_sprite(
+					sprite_id,
+					self.sprites.get_mut(&sprite_id.0).unwrap(), 
+					entity.pos
+				);
+			}
 		}
 	}
 
@@ -103,20 +129,20 @@ pub struct TileMap {
 }
 
 impl TileMap {
-	pub fn move_entity(&mut self, entity_id: EntityId, entity: &mut Entity, new_pos: Vec2) {
-		let texture_size = entity.texture_size;
+	pub fn move_sprite(&mut self, sprite_id: SpriteId, sprite: &mut Sprite, new_pos: Vec2) {
+		let size = sprite.size;
 
-		let old_top    = (entity.pos.y - texture_size / 2.0).floor() as isize;
-		let old_bottom = (entity.pos.y + texture_size / 2.0).floor() as isize;
-		let old_left   = (entity.pos.x - texture_size / 2.0).floor() as isize;
-		let old_right  = (entity.pos.x + texture_size / 2.0).floor() as isize;
+		let old_top    = (sprite.pos.y - size / 2.0).floor() as isize;
+		let old_bottom = (sprite.pos.y + size / 2.0).floor() as isize;
+		let old_left   = (sprite.pos.x - size / 2.0).floor() as isize;
+		let old_right  = (sprite.pos.x + size / 2.0).floor() as isize;
 
-		let new_top    = (new_pos.y - texture_size / 2.0).floor() as isize;
-		let new_bottom = (new_pos.y + texture_size / 2.0).floor() as isize;
-		let new_left   = (new_pos.x - texture_size / 2.0).floor() as isize;
-		let new_right  = (new_pos.x + texture_size / 2.0).floor() as isize;
+		let new_top    = (new_pos.y - size / 2.0).floor() as isize;
+		let new_bottom = (new_pos.y + size / 2.0).floor() as isize;
+		let new_left   = (new_pos.x - size / 2.0).floor() as isize;
+		let new_right  = (new_pos.x + size / 2.0).floor() as isize;
 
-		entity.pos = new_pos;
+		sprite.pos = new_pos;
 
 		if old_top == new_top && old_bottom == new_bottom &&
 			new_left == old_left && old_right == new_right
@@ -127,8 +153,8 @@ impl TileMap {
 		for y in old_top ..= old_bottom {
 			for x in old_left ..= old_right {
 				if let Some(tile) = self.get_mut(x, y) {
-					if let Some(loc) = tile.entities_inside.iter().position(|&v| v == entity_id) {
-						tile.entities_inside.swap_remove(loc);
+					if let Some(loc) = tile.sprites_inside.iter().position(|&v| v == sprite_id) {
+						tile.sprites_inside.swap_remove(loc);
 					}
 				}
 			}
@@ -137,7 +163,7 @@ impl TileMap {
 		for y in new_top ..= new_bottom {
 			for x in new_left ..= new_right {
 				if let Some(tile) = self.get_mut(x, y) {
-					tile.entities_inside.push(entity_id);
+					tile.sprites_inside.push(sprite_id);
 				}
 			}
 		}
@@ -195,7 +221,7 @@ pub struct TileGraphics {
 #[derive(Clone)]
 pub struct Tile {
 	pub kind: TileKind,
-	pub entities_inside: Vec<EntityId>,
+	pub sprites_inside: Vec<SpriteId>,
 	pub floor_gfx: Texture,
 }
 
@@ -211,7 +237,7 @@ impl Tile {
 		Tile {
 			kind,
 			floor_gfx: Texture::Floor,
-			entities_inside: Vec::new(),
+			sprites_inside: Vec::new(),
 		}
 	}
 
@@ -232,28 +258,43 @@ impl Tile {
 	}
 }
 
+pub struct Sprite {
+	pos: Vec2,
+	pub y_pos: f32,
+	pub texture: Texture,
+	size: f32,
+}
+
+impl Sprite {
+	#[inline]
+	pub fn pos(&self) -> Vec2 {
+		self.pos
+	}
+
+	#[inline]
+	pub fn size(&self) -> f32 {
+		self.size
+	}
+}
+
 pub struct Entity {
 	pub pos: Vec2,
 	pub vel: Vec2,
 	pub move_drag: f32,
-	pub y_pos: f32,
 	pub rot: f32,
 	pub size: f32,
-	pub texture: Texture,
-	pub texture_size: f32,
+	pub sprite: Option<SpriteId>,
 }
 
 impl Entity {
-	pub fn new(pos: Vec2, size: f32, texture: Texture) -> Self {
+	pub fn new(pos: Vec2, size: f32, sprite: Option<SpriteId>) -> Self {
 		Entity {
 			pos,
 			vel: Vec2::zero(),
 			move_drag: 1.0,
-			y_pos: 0.5,
 			rot: 0.0,
 			size,
-			texture,
-			texture_size: 0.5,
+			sprite,
 		}
 	}
 }

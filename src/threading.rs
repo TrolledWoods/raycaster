@@ -213,17 +213,17 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut V
 								graphics.is_transparent
 							}
 							None => {
-								for &entity_id in tile.entities_inside.iter() {
-									let entity = world.get_entity(entity_id).unwrap();
+								for &sprite_id in tile.sprites_inside.iter() {
+									let entity = world.get_sprite(sprite_id).unwrap();
 
-									let rel_entity_pos = inv_cam_matrix * (entity.pos - cam_pos);
-									let hit_x = 0.5 + (rel_entity_pos.x - fx * rel_entity_pos.y) / entity.texture_size;
+									let rel_entity_pos = inv_cam_matrix * (entity.pos() - cam_pos);
+									let hit_x = 0.5 + (rel_entity_pos.x - fx * rel_entity_pos.y) / entity.size();
 									if hit_x >= 0.0 && hit_x < 1.0 {
 										hits.push(HitData {
 											dist: rel_entity_pos.y,
 											uv: hit_x,
 											texture_id: entity.texture,
-											size: entity.texture_size,
+											size: entity.size(),
 											y_pos: entity.y_pos,
 										});
 									}

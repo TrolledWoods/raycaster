@@ -293,6 +293,8 @@ impl WorldGenerator {
 					self.n_rooms_width * self.n_rooms_height * ROOM_WIDTH * ROOM_HEIGHT
 				],
 			},
+			sprites: HashMap::new(),
+			sprite_id_counter: NonZeroU32::new(1).unwrap(),
 			entities: HashMap::new(),
 			entity_id_counter: NonZeroU32::new(1).unwrap(),
 		};
@@ -321,19 +323,18 @@ impl WorldGenerator {
 						let kind = match gen_tile_kind {
 							GenTileKind::Floor => {
 								if random.get_float() <= 0.001 {
+									let pos = Vec2::new(
+										(room_x * ROOM_WIDTH + tile_x) as f32 + 0.5,
+										(room_y * ROOM_HEIGHT + tile_y) as f32 + 0.5
+									);
+									let sprite = world.insert_sprite(Texture::Rick, pos, 1.0, 0.0);
 									world.insert_entity(Entity {
-										y_pos: 0.0,
-										texture_size: 1.0,
 										move_drag: 0.0,
 										vel: Vec2::new(
 											(random.get_float() - 0.5) * 25.0,
 											(random.get_float() - 0.5) * 25.0,
 										),
-										.. Entity::new(
-											Vec2::new((room_x * ROOM_WIDTH + tile_x) as f32 + 0.5, (room_y * ROOM_HEIGHT + tile_y) as f32 + 0.5),
-											0.3,
-											Texture::Rick,
-										)
+										.. Entity::new(pos, 0.3, Some(sprite))
 									});
 								}
 								TileKind::Floor
@@ -351,10 +352,7 @@ impl WorldGenerator {
 			}
 		}
 
-		let player_id = world.insert_entity(Entity {
-			texture_size: 0.0,
-			.. Entity::new(start, 0.3, Texture::Window)
-		});
+		let player_id = world.insert_entity(Entity::new(start, 0.3, None));
 
 		(player_id, world)
 	}
