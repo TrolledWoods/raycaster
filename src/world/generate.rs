@@ -3,6 +3,7 @@ use std::num::NonZeroU32;
 use super::{Tile, TileKind, World, Entity, EntityId, TileMap};
 use crate::random::Random;
 use crate::Vec2;
+use crate::texture::Texture;
 
 const ROOM_WIDTH:  usize = 4;
 const ROOM_HEIGHT: usize = 4;
@@ -106,6 +107,33 @@ impl WorldGenerator {
 				],
 				n_rooms_width: 1,
 				n_rooms_height: 1,
+			},
+			RoomPrefab {
+				chance: 0.2,
+				tiles: vec![
+					Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa,
+					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
+					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
+					Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa,
+					Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa,
+					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
+					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
+					Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa, Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa,
+					Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa, Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa,
+					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
+					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
+					Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa, Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa,
+					Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa, Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa,
+					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
+					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
+					Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa,
+					Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa,
+					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
+					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
+					Wa, Wd, Wd, Wa, Wa, Wd, Wd, Wa, Wa, Wd, Wd, Wa, Wa, Wd, Wd, Wa,
+				],
+				n_rooms_width: 4,
+				n_rooms_height: 4,
 			},
 			RoomPrefab {
 				chance: 1.0,
@@ -295,7 +323,7 @@ impl WorldGenerator {
 										.. Entity::new(
 											Vec2::new((room_x * ROOM_WIDTH + tile_x) as f32 + 0.5, (room_y * ROOM_HEIGHT + tile_y) as f32 + 0.5),
 											0.3,
-											3,
+											Texture::Rick,
 										)
 									});
 								}
@@ -316,7 +344,7 @@ impl WorldGenerator {
 
 		let player_id = world.insert_entity(Entity {
 			texture_size: 0.0,
-			.. Entity::new(start, 0.3, 1)
+			.. Entity::new(start, 0.3, Texture::Window)
 		});
 
 		(player_id, world)

@@ -7,6 +7,7 @@ use crate::world::World;
 use crate::texture::Textures;
 use crate::raycast::{raycast, Raycast};
 use crate::render::ImageColumn;
+use crate::texture::*;
 use crate::{Vec2, Mat2};
 
 // TODO: It's weird to have rendering in the threading file, so,
@@ -140,14 +141,14 @@ struct HitData {
 	dist: f32,
 	size: f32,
 	uv: f32,
-	texture_id: u16,
+	texture_id: Texture,
 	y_pos: f32,
 }
 
 struct FloorGfx {
 	from_dist: f32,
 	to_dist: f32,
-	texture_id: u16,
+	texture_id: Texture,
 	from_uv: Vec2,
 	to_uv: Vec2,
 }

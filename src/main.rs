@@ -14,18 +14,12 @@ type Vec2 = vek::vec::repr_simd::Vec2<f32>;
 type Mat2 = vek::mat::repr_simd::column_major::Mat2<f32>;
 
 fn main() {
-	let textures = texture::Textures::create(vec![
-		image::open("assets/wall.png").unwrap().into_rgba(),
-		image::open("assets/window.png").unwrap().into_rgba(),
-		image::open("assets/evil.png").unwrap().into_rgba(),
-		image::open("assets/rick.png").unwrap().into_rgba(),
-		image::open("assets/floor.png").unwrap().into_rgba(),
-	]);
+	let textures = texture::Textures::new().unwrap();
 
     let mut buffer: Vec<u32> = Vec::new();
 
 	let mut random = random::Random::new();
-	let (player_id, mut world) = world::generate::WorldGenerator::new(100, 100)
+	let (player_id, mut world) = world::generate::WorldGenerator::new(500, 500)
 		.generate(&mut random, Vec2::one() * 2.5);
 
 	world.to_image("output_maze.png");	
