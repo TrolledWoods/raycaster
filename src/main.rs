@@ -47,6 +47,8 @@ fn main() {
 	let mut frame_rate_index = 0;
 	let mut last_frame_time = 1.0;
 
+	let mut elapsed_time = 0.0;
+
 	let mut thread_pool = threading::ThreadPool::new(4);
 	while window.is_open() && !window.is_key_down(Key::F4) {
 		let (width, height) = window.get_size();
@@ -100,6 +102,7 @@ fn main() {
 			height,
 			&mut buffer,
 			aspect,
+			elapsed_time,
 		);
 
 		frame_rate[frame_rate_index] = instant.elapsed().as_secs_f32();
@@ -107,6 +110,7 @@ fn main() {
 		window.update_with_buffer(&buffer, width, height).unwrap();
 
 		last_frame_time = instant.elapsed().as_secs_f32();
+		elapsed_time += last_frame_time;
 		frame_rate_index += 1;
 		if frame_rate_index >= frame_rate.len() {
 			frame_rate_index = 0;

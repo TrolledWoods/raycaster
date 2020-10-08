@@ -28,6 +28,7 @@ struct RaycastWork {
 	cam_matrix: Mat2,
 	cam_pos: Vec2,
 	aspect: f32,
+	world_time: f32,
 }
 
 // SAFETY: This is safe because we are not using thread local storage or anything.
@@ -38,14 +39,14 @@ struct SharedData {
 	keep_running: AtomicBool,
 }
 
-pub struct ThreadPool {
+pub struct ThreadPool<'a> {
 	threads: Vec<JoinHandle<()>>,
 	shared: Arc<SharedData>,
-	hit_data_cache: Vec<HitData>,
+	hit_data_cache: Vec<HitData<'a>>,
 	floor_gfx_cache: Vec<FloorGfx>,
 }
 
-impl ThreadPool {
+impl ThreadPool<'_> {
 	pub fn new(n_threads: usize) -> Self {
 		let mut threads = Vec::new();
 
@@ -99,6 +100,7 @@ impl ThreadPool {
 		height: usize,
 		buffer: &mut [u32],
 		aspect: f32,
+		world_time: f32,
 	) {
 		assert_eq!(width * height, buffer.len());
 
@@ -118,6 +120,7 @@ impl ThreadPool {
 				cam_matrix,
 				x_offset: i * SPLIT_SIZE,
 				aspect,
+				world_time,
 			});
 		}
 
@@ -145,11 +148,11 @@ impl ThreadPool {
 }
 
 #[derive(Clone, Copy)]
-struct HitData {
+struct HitData<'a> {
 	dist: f32,
 	size: f32,
 	uv: f32,
-	texture_id: Texture,
+	image: &'a image::RgbaImage,
 	y_pos: f32,
 }
 
@@ -173,6 +176,7 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut V
 		cam_matrix,
 		cam_pos,
 		aspect,
+		world_time,
 	} = work;
 
 	// If the RaycastWork is valid, this should be valid too!
@@ -220,7 +224,7 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut V
 								hits.push(HitData {
 									dist,
 									uv: off_x + off_y,
-									texture_id: graphics.texture,
+									image: textures.get_anim(&graphics.texture, world_time),
 									size: 1.0,
 									y_pos: 0.5,
 								});
@@ -238,7 +242,7 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut V
 										hits.push(HitData {
 											dist: rel_entity_pos.y,
 											uv: hit_x,
-											texture_id: entity.texture,
+											image: textures.get(entity.texture),
 											size: entity.size(),
 											y_pos: entity.y_pos,
 										});
@@ -286,10 +290,9 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut V
 
 		for hit in hits.iter().rev() {
 			let dist_size = 1.0f32 / (0.0000001 + hit.dist);
-			let texture = textures.get(hit.texture_id);
 			column.draw_partial_image(
-				texture,
-				((hit.uv * texture.height() as f32) as u32).clamp(0, texture.height() - 1),
+				hit.image,
+				((hit.uv * hit.image.height() as f32) as u32).clamp(0, hit.image.height() - 1),
 				0.0,
 				1.0,
 				0.5 - dist_size * 0.5 + dist_size * (hit.y_pos * (1.0 - hit.size)),

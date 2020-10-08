@@ -3,7 +3,7 @@ pub mod generate;
 use std::collections::HashMap;
 use std::num::NonZeroU32;
 
-use crate::texture::Texture;
+use crate::texture::*;
 use crate::Vec2;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -233,14 +233,16 @@ impl TileMap {
 	}
 }
 
+#[derive(Clone)]
 pub struct TileGraphics {
-	pub texture: Texture,
+	pub texture: Animation,
 	pub is_transparent: bool,
 }
 
 #[derive(Clone)]
 pub struct Tile {
-	pub kind: TileKind,
+	graphics: Option<TileGraphics>,
+	kind: TileKind,
 	pub sprites_inside: Vec<SpriteId>,
 	pub floor_gfx: Texture,
 }
@@ -253,26 +255,46 @@ pub enum TileKind {
 }
 
 impl Tile {
-	pub fn new(kind: TileKind) -> Self {
+	pub fn new(kind: TileKind, time: f32) -> Self {
 		Tile {
+			graphics: match kind {
+				TileKind::Floor => None,
+				TileKind::Wall => Some(TileGraphics {
+					texture: Animation::new_loop(Texture::Wall),
+					is_transparent: false,
+				}),
+				TileKind::Window => Some(TileGraphics {
+					texture: Animation::new_loop(Texture::Window),
+					is_transparent: true,
+				}),
+			},
 			kind,
 			floor_gfx: Texture::Floor,
 			sprites_inside: Vec::new(),
 		}
 	}
 
-	pub fn get_graphics(&self) -> Option<TileGraphics> {
-		match self.kind {
+	pub fn kind(&self) -> &TileKind {
+		&self.kind
+	}
+
+	pub fn set_kind(&mut self, kind: TileKind) {
+		self.graphics = match kind {
 			TileKind::Floor => None,
 			TileKind::Wall => Some(TileGraphics {
-				texture: Texture::Wall,
+				texture: Animation::new_loop(Texture::Wall),
 				is_transparent: false,
 			}),
 			TileKind::Window => Some(TileGraphics {
-				texture: Texture::Window,
+				texture: Animation::new_loop(Texture::Window),
 				is_transparent: true,
 			}),
-		}
+		};
+		self.kind = kind;
+	}
+
+	pub fn get_graphics(&self) -> &Option<TileGraphics> {
+		&self.graphics
 	}
 
 	pub fn is_solid(&self) -> bool {

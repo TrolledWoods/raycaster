@@ -288,7 +288,7 @@ impl WorldGenerator {
 				width: self.n_rooms_width * ROOM_WIDTH,
 				height: self.n_rooms_height * ROOM_HEIGHT,
 				tiles: vec![
-					Tile::new(TileKind::Wall);
+					Tile::new(TileKind::Floor, 0.0);
 					self.n_rooms_width * self.n_rooms_height * ROOM_WIDTH * ROOM_HEIGHT
 				],
 			},
@@ -358,7 +358,7 @@ impl WorldGenerator {
 						world.tiles.tiles[(room_y * ROOM_HEIGHT + tile_y)
 							* ROOM_WIDTH * self.n_rooms_width
 							+ (room_x * ROOM_WIDTH + tile_x)]
-							.kind = kind;
+							.set_kind(kind);
 					}
 				}
 			}
