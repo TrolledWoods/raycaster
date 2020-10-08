@@ -1,11 +1,11 @@
+use super::{Entity, EntityId, Tile, TileKind, TileMap, World};
+use crate::random::Random;
+use crate::texture::Texture;
+use crate::Vec2;
 use std::collections::HashMap;
 use std::num::NonZeroU32;
-use super::{Tile, TileKind, World, Entity, EntityId, TileMap};
-use crate::random::Random;
-use crate::Vec2;
-use crate::texture::Texture;
 
-const ROOM_WIDTH:  usize = 4;
+const ROOM_WIDTH: usize = 4;
 const ROOM_HEIGHT: usize = 4;
 
 #[allow(non_upper_case_globals)]
@@ -93,17 +93,18 @@ impl WorldGenerator {
 			},
 		];
 		let mut rooms = Rooms::new(self.n_rooms_width, self.n_rooms_height);
-		*rooms.get_mut((start.x.floor() / ROOM_WIDTH as f32) as isize, (start.y.floor() / ROOM_HEIGHT as f32) as isize).unwrap() =
-			Some(Room::new(0, 0, 0));
+		*rooms
+			.get_mut(
+				(start.x.floor() / ROOM_WIDTH as f32) as isize,
+				(start.y.floor() / ROOM_HEIGHT as f32) as isize,
+			)
+			.unwrap() = Some(Room::new(0, 0, 0));
 
 		let room_prefabs = vec![
 			RoomPrefab {
 				chance: 5.0,
 				tiles: vec![
-					Wa, Wu, Wu, Wa,
-					Wl, Fa, Fa, Wr,
-					Wl, Fa, Fa, Wr,
-					Wa, Wd, Wd, Wa,
+					Wa, Wu, Wu, Wa, Wl, Fa, Fa, Wr, Wl, Fa, Fa, Wr, Wa, Wd, Wd, Wa,
 				],
 				n_rooms_width: 1,
 				n_rooms_height: 1,
@@ -111,26 +112,22 @@ impl WorldGenerator {
 			RoomPrefab {
 				chance: 0.2,
 				tiles: vec![
-					Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa,
-					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
-					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
-					Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa,
-					Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa,
-					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
-					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
-					Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa, Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa,
-					Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa, Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa,
-					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
-					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
-					Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa, Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa,
-					Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa, Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa,
-					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
-					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
-					Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa,
-					Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa,
-					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
-					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
-					Wa, Wd, Wd, Wa, Wa, Wd, Wd, Wa, Wa, Wd, Wd, Wa, Wa, Wd, Wd, Wa,
+					Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa, Wl, Fa, Fa, Fa,
+					Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr, Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa,
+					Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr, Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa,
+					Fa, Fa, Fa, Wa, Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa,
+					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr, Wl, Fa, Fa, Fa,
+					Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr, Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa,
+					Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa, Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa, Ga, Fa, Ga, Fa,
+					Fa, Fa, Fa, Wa, Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
+					Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr, Wa, Fa, Fa, Fa,
+					Fa, Fa, Ga, Fa, Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa, Wa, Fa, Fa, Fa, Fa, Fa, Ga, Fa,
+					Ga, Fa, Ga, Fa, Fa, Fa, Fa, Wa, Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa,
+					Fa, Fa, Fa, Wr, Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr,
+					Wa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa, Wa, Fa, Fa, Fa,
+					Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wa, Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa,
+					Fa, Fa, Fa, Fa, Fa, Fa, Fa, Wr, Wl, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa, Fa,
+					Fa, Fa, Fa, Wr, Wa, Wd, Wd, Wa, Wa, Wd, Wd, Wa, Wa, Wd, Wd, Wa, Wa, Wd, Wd, Wa,
 				],
 				n_rooms_width: 4,
 				n_rooms_height: 4,
@@ -138,14 +135,10 @@ impl WorldGenerator {
 			RoomPrefab {
 				chance: 1.0,
 				tiles: vec![
-					Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa,
-					Wl, Fa, Fa, Ga, Fa, Fa, Fa, Wr,
-					Wl, Fa, Fa, Ga, Fa, Fa, Fa, Wr,
-					Wa, Fa, Fa, Ga, Fa, Fa, Fa, Wa,
-					Wa, Fa, Fa, Fa, Fa, Fa, Fa, Wa,
-					Wl, Fa, Fa, Ga, Fa, Fa, Fa, Wr,
-					Wl, Fa, Fa, Ga, Fa, Fa, Fa, Wr,
-					Wa, Wd, Wd, Wa, Wa, Wd, Wd, Wa,
+					Wa, Wu, Wu, Wa, Wa, Wu, Wu, Wa, Wl, Fa, Fa, Ga, Fa, Fa, Fa, Wr, Wl, Fa, Fa, Ga,
+					Fa, Fa, Fa, Wr, Wa, Fa, Fa, Ga, Fa, Fa, Fa, Wa, Wa, Fa, Fa, Fa, Fa, Fa, Fa, Wa,
+					Wl, Fa, Fa, Ga, Fa, Fa, Fa, Wr, Wl, Fa, Fa, Ga, Fa, Fa, Fa, Wr, Wa, Wd, Wd, Wa,
+					Wa, Wd, Wd, Wa,
 				],
 				n_rooms_width: 2,
 				n_rooms_height: 2,
@@ -153,14 +146,8 @@ impl WorldGenerator {
 			RoomPrefab {
 				chance: 3.0,
 				tiles: vec![
-					Wa, Wu, Ga, Wa,
-					Wl, Fa, Fa, Wr,
-					Ga, Fa, Fa, Ga,
-					Wa, Fa, Fa, Wa,
-					Wa, Fa, Fa, Wa,
-					Wl, Fa, Fa, Wr,
-					Ga, Fa, Fa, Ga,
-					Wa, Wd, Ga, Wa,
+					Wa, Wu, Ga, Wa, Wl, Fa, Fa, Wr, Ga, Fa, Fa, Ga, Wa, Fa, Fa, Wa, Wa, Fa, Fa, Wa,
+					Wl, Fa, Fa, Wr, Ga, Fa, Fa, Ga, Wa, Wd, Ga, Wa,
 				],
 				n_rooms_width: 1,
 				n_rooms_height: 2,
@@ -168,14 +155,8 @@ impl WorldGenerator {
 			RoomPrefab {
 				chance: 1.0,
 				tiles: vec![
-					Wa, Wu, Ga, Wa,
-					Wl, Fa, Fa, Wr,
-					Ga, Fa, Ga, Ga,
-					Wa, Fa, Ga, Wa,
-					Wa, Fa, Wr, Wr,
-					Wl, Fa, Wr, Wr,
-					Ga, Fa, Fa, Ga,
-					Wa, Wd, Ga, Wa,
+					Wa, Wu, Ga, Wa, Wl, Fa, Fa, Wr, Ga, Fa, Ga, Ga, Wa, Fa, Ga, Wa, Wa, Fa, Wr, Wr,
+					Wl, Fa, Wr, Wr, Ga, Fa, Fa, Ga, Wa, Wd, Ga, Wa,
 				],
 				n_rooms_width: 1,
 				n_rooms_height: 2,
@@ -205,8 +186,9 @@ impl WorldGenerator {
 
 			empty_spots.clear();
 			rooms.find_empty_spot(
-				loose_end.from_x, loose_end.from_y,
-				wanted_prefab.n_rooms_width  as isize,
+				loose_end.from_x,
+				loose_end.from_y,
+				wanted_prefab.n_rooms_width as isize,
 				wanted_prefab.n_rooms_height as isize,
 				loose_end.direction,
 				&mut empty_spots,
@@ -214,13 +196,25 @@ impl WorldGenerator {
 
 			let (room_x, room_y) = match empty_spots.len() {
 				0 => {
-					if !rooms.square_is_empty(loose_end.from_x + off_x, loose_end.from_y + off_y, 1, 1) {
+					if !rooms.square_is_empty(
+						loose_end.from_x + off_x,
+						loose_end.from_y + off_y,
+						1,
+						1,
+					) {
 						if random.get_float() < 0.05 {
-							if let Some(room) = rooms.get_mut(loose_end.from_x + off_x, loose_end.from_y + off_y) {
-								*room.as_mut().unwrap()
+							if let Some(room) =
+								rooms.get_mut(loose_end.from_x + off_x, loose_end.from_y + off_y)
+							{
+								*room
+									.as_mut()
+									.unwrap()
 									.get_dir_mut(loose_end.direction.inverted()) = true;
-								*rooms.get_mut(loose_end.from_x, loose_end.from_y).unwrap()
-									.as_mut().unwrap()
+								*rooms
+									.get_mut(loose_end.from_x, loose_end.from_y)
+									.unwrap()
+									.as_mut()
+									.unwrap()
 									.get_dir_mut(loose_end.direction) = true;
 							}
 						}
@@ -239,20 +233,25 @@ impl WorldGenerator {
 
 			for prefab_y in 0..wanted_prefab.n_rooms_height {
 				for prefab_x in 0..wanted_prefab.n_rooms_width {
-					let room = rooms.get_mut(
-						room_x + prefab_x as isize,
-						room_y + prefab_y as isize,
-					).unwrap();
+					let room = rooms
+						.get_mut(room_x + prefab_x as isize, room_y + prefab_y as isize)
+						.unwrap();
 
 					*room = Some(Room::new(wanted_prefab_id, prefab_x, prefab_y));
 				}
 			}
 
-			*rooms.get_mut(loose_end.from_x + off_x, loose_end.from_y + off_y).unwrap()
-				.as_mut().unwrap()
+			*rooms
+				.get_mut(loose_end.from_x + off_x, loose_end.from_y + off_y)
+				.unwrap()
+				.as_mut()
+				.unwrap()
 				.get_dir_mut(loose_end.direction.inverted()) = true;
-			*rooms.get_mut(loose_end.from_x, loose_end.from_y).unwrap()
-				.as_mut().unwrap()
+			*rooms
+				.get_mut(loose_end.from_x, loose_end.from_y)
+				.unwrap()
+				.as_mut()
+				.unwrap()
 				.get_dir_mut(loose_end.direction) = true;
 
 			for prefab_y in 0..wanted_prefab.n_rooms_height {
@@ -299,7 +298,6 @@ impl WorldGenerator {
 			entity_id_counter: NonZeroU32::new(1).unwrap(),
 		};
 
-
 		for (room_y, chunk) in rooms.rooms.chunks(self.n_rooms_width).enumerate() {
 			for (room_x, room) in chunk.iter().enumerate() {
 				let room = room.as_ref().expect("Didn't fill the entire dungeon!?");
@@ -308,10 +306,9 @@ impl WorldGenerator {
 
 				for tile_y in 0..ROOM_HEIGHT {
 					for tile_x in 0..ROOM_WIDTH {
-						let gen_tile = &room_data.tiles[
-							(room.room_y * ROOM_HEIGHT + tile_y) * ROOM_WIDTH * room_data.n_rooms_width +
-							room.room_x * ROOM_WIDTH + tile_x
-						];
+						let gen_tile = &room_data.tiles[(room.room_y * ROOM_HEIGHT + tile_y)
+							* ROOM_WIDTH * room_data.n_rooms_width
+							+ room.room_x * ROOM_WIDTH + tile_x];
 
 						let mut gen_tile_kind = &gen_tile.kind;
 						if let &Some((ref new_kind, change_if_dir)) = &gen_tile.change_if {
@@ -325,7 +322,7 @@ impl WorldGenerator {
 								if random.get_float() <= 0.010 {
 									let pos = Vec2::new(
 										(room_x * ROOM_WIDTH + tile_x) as f32 + 0.5,
-										(room_y * ROOM_HEIGHT + tile_y) as f32 + 0.5
+										(room_y * ROOM_HEIGHT + tile_y) as f32 + 0.5,
 									);
 									let sprite = world.insert_sprite(Texture::Rick, pos, 1.0, 0.0);
 									world.insert_entity(Entity {
@@ -334,26 +331,34 @@ impl WorldGenerator {
 											(random.get_float() - 0.5) * 25.0,
 											(random.get_float() - 0.5) * 25.0,
 										),
-										.. Entity::new(pos, 0.3, Some(sprite))
+										..Entity::new(pos, 0.3, Some(sprite))
 									});
 								}
-								for _ in 0 .. (random.get_float() * random.get_float() * random.get_float() * 60.0) as u32 {
+								for _ in 0..(random.get_float()
+									* random.get_float() * random.get_float()
+									* 60.0) as u32
+								{
 									let pos = Vec2::new(
 										(room_x * ROOM_WIDTH + tile_x) as f32 + random.get_float(),
-										(room_y * ROOM_HEIGHT + tile_y) as f32 + random.get_float() 
+										(room_y * ROOM_HEIGHT + tile_y) as f32 + random.get_float(),
 									);
-									world.insert_sprite(Texture::Fungus, pos, random.get_float() * 0.1 + 0.1, 1.0);
+									world.insert_sprite(
+										Texture::Fungus,
+										pos,
+										random.get_float() * 0.1 + 0.1,
+										1.0,
+									);
 								}
 								TileKind::Floor
-							},
+							}
 							GenTileKind::Wall => TileKind::Wall,
 							GenTileKind::Window => TileKind::Window,
 						};
 
-						world.tiles.tiles[
-							(room_y * ROOM_HEIGHT + tile_y) * ROOM_WIDTH * self.n_rooms_width +
-							(room_x * ROOM_WIDTH + tile_x)
-						].kind = kind;
+						world.tiles.tiles[(room_y * ROOM_HEIGHT + tile_y)
+							* ROOM_WIDTH * self.n_rooms_width
+							+ (room_x * ROOM_WIDTH + tile_x)]
+							.kind = kind;
 					}
 				}
 			}
@@ -377,19 +382,19 @@ pub enum Direction {
 impl Direction {
 	fn inverted(self) -> Direction {
 		match self {
-			Direction::Up    => Direction::Down,
-			Direction::Down  => Direction::Up,
-			Direction::Left  => Direction::Right,
+			Direction::Up => Direction::Down,
+			Direction::Down => Direction::Up,
+			Direction::Left => Direction::Right,
 			Direction::Right => Direction::Left,
 		}
 	}
 
 	fn to_vec(self) -> (isize, isize) {
 		match self {
-			Direction::Up    => (0, -1),
-			Direction::Down  => (0,  1),
-			Direction::Left  => (-1, 0),
-			Direction::Right => (1,  0),
+			Direction::Up => (0, -1),
+			Direction::Down => (0, 1),
+			Direction::Left => (-1, 0),
+			Direction::Right => (1, 0),
 		}
 	}
 }
@@ -427,9 +432,9 @@ impl Room {
 
 	fn get_dir(&self, direction: Direction) -> bool {
 		match direction {
-			Direction::Up    => self.up,
-			Direction::Down  => self.down,
-			Direction::Left  => self.left,
+			Direction::Up => self.up,
+			Direction::Down => self.down,
+			Direction::Left => self.left,
 			Direction::Right => self.right,
 		}
 	}
@@ -481,15 +486,17 @@ impl Rooms {
 	/// starting from (x, y), into a given direction.
 	fn find_empty_spot(
 		&self,
-		x: isize, y: isize,
-		width: isize, height: isize,
+		x: isize,
+		y: isize,
+		width: isize,
+		height: isize,
 		direction: Direction,
 		results: &mut Vec<(isize, isize)>,
 	) {
 		let mut streak = 0;
 		match direction {
 			Direction::Right => {
-				results.extend((-height + 1 .. height).filter_map(|off_y| {
+				results.extend((-height + 1..height).filter_map(|off_y| {
 					if self.square_is_empty(x + 1, y + off_y, width, 1) {
 						streak += 1;
 
@@ -505,7 +512,7 @@ impl Rooms {
 				}));
 			}
 			Direction::Left => {
-				results.extend((-height + 1 .. height).filter_map(|off_y| {
+				results.extend((-height + 1..height).filter_map(|off_y| {
 					if self.square_is_empty(x - width, y + off_y, width, 1) {
 						streak += 1;
 
@@ -521,7 +528,7 @@ impl Rooms {
 				}));
 			}
 			Direction::Up => {
-				results.extend((-width + 1 .. width).filter_map(|off_x| {
+				results.extend((-width + 1..width).filter_map(|off_x| {
 					if self.square_is_empty(x + off_x, y - height, 1, height) {
 						streak += 1;
 
@@ -537,7 +544,7 @@ impl Rooms {
 				}));
 			}
 			Direction::Down => {
-				results.extend((-width + 1 .. width).filter_map(|off_x| {
+				results.extend((-width + 1..width).filter_map(|off_x| {
 					if self.square_is_empty(x + off_x, y + 1, 1, height) {
 						streak += 1;
 
@@ -558,8 +565,8 @@ impl Rooms {
 	/// Returns true if the square is inside the bounds of the rooms, and if there are no
 	/// rooms there already.
 	fn square_is_empty(&self, x: isize, y: isize, width: isize, height: isize) -> bool {
-		for y in y .. y + height {
-			for x in x .. x + width {
+		for y in y..y + height {
+			for x in x..x + width {
 				match self.get(x, y) {
 					Some(None) => (),
 					_ => return false,

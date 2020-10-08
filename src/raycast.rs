@@ -21,10 +21,7 @@ impl Default for Raycast {
 	}
 }
 
-pub fn raycast(
-	cast: Raycast,
-	mut data: impl FnMut(f32, isize, isize, f32, f32, Vec2) -> bool,
-) {
+pub fn raycast(cast: Raycast, mut data: impl FnMut(f32, isize, isize, f32, f32, Vec2) -> bool) {
 	let mut total = 0.0;
 
 	let mut ix = cast.x.floor() as isize;
@@ -66,10 +63,12 @@ pub fn raycast(
 		}
 
 		if !data(
-			total, ix, iy,
+			total,
+			ix,
+			iy,
 			pos.x.fract(), // (x_remaining * cast.dx + 1.0).fract(),
 			pos.y.fract(), // (y_remaining * cast.dy + 1.0).fract(),
-			pos
+			pos,
 		) {
 			break;
 		}

@@ -2,13 +2,13 @@
 #![feature(clamp)]
 
 use minifb::{Key, Window, WindowOptions};
-mod raycast;
-mod world;
-mod texture;
-mod threading;
-mod render;
 mod float_range;
 mod random;
+mod raycast;
+mod render;
+mod texture;
+mod threading;
+mod world;
 
 type Vec2 = vek::vec::repr_simd::Vec2<f32>;
 type Mat2 = vek::mat::repr_simd::column_major::Mat2<f32>;
@@ -16,28 +16,28 @@ type Mat2 = vek::mat::repr_simd::column_major::Mat2<f32>;
 fn main() {
 	let textures = texture::Textures::new().unwrap();
 
-    let mut buffer: Vec<u32> = Vec::new();
+	let mut buffer: Vec<u32> = Vec::new();
 
 	let mut random = random::Random::new();
-	let (player_id, mut world) = world::generate::WorldGenerator::new(100, 100)
-		.generate(&mut random, Vec2::one() * 102.5);
+	let (player_id, mut world) =
+		world::generate::WorldGenerator::new(100, 100).generate(&mut random, Vec2::one() * 102.5);
 
-	world.to_image("output_maze.png");	
+	world.to_image("output_maze.png");
 
-    let mut window = Window::new(
-        "Raycaster",
-        640,
-        480,
-        WindowOptions {
+	let mut window = Window::new(
+		"Raycaster",
+		640,
+		480,
+		WindowOptions {
 			resize: true,
-			.. WindowOptions::default()
+			..WindowOptions::default()
 		},
-    )
-    .unwrap_or_else(|e| {
-        panic!("{}", e);
-    });
+	)
+	.unwrap_or_else(|e| {
+		panic!("{}", e);
+	});
 
-    window.limit_update_rate(Some(std::time::Duration::from_secs_f32(1.0 / 40.0)));
+	window.limit_update_rate(Some(std::time::Duration::from_secs_f32(1.0 / 40.0)));
 
 	let mut cam_pos = Vec2::new(5.0, 5.0);
 	let mut cam_matrix = Mat2::zero();
@@ -48,7 +48,7 @@ fn main() {
 	let mut last_frame_time = 1.0;
 
 	let mut thread_pool = threading::ThreadPool::new(4);
-    while window.is_open() && !window.is_key_down(Key::F4) {
+	while window.is_open() && !window.is_key_down(Key::F4) {
 		let (width, height) = window.get_size();
 		let aspect = height as f32 / width as f32;
 
@@ -88,28 +88,36 @@ fn main() {
 			cam_pos = player.pos;
 		}
 
-		for val in buffer.iter_mut() { *val = 0; }
+		for val in buffer.iter_mut() {
+			*val = 0;
+		}
 		thread_pool.raycast_scene(
-			&world, &textures,
-			cam_pos, cam_matrix,
-			width, height, &mut buffer,
-			aspect
+			&world,
+			&textures,
+			cam_pos,
+			cam_matrix,
+			width,
+			height,
+			&mut buffer,
+			aspect,
 		);
 
 		frame_rate[frame_rate_index] = instant.elapsed().as_secs_f32();
 
-        window
-            .update_with_buffer(&buffer, width, height)
-            .unwrap();
+		window.update_with_buffer(&buffer, width, height).unwrap();
 
 		last_frame_time = instant.elapsed().as_secs_f32();
 		frame_rate_index += 1;
 		if frame_rate_index >= frame_rate.len() {
 			frame_rate_index = 0;
 			let average: f32 = frame_rate.iter().sum::<f32>() / frame_rate.len() as f32;
-			println!("{} seconds / {} fps (if no fps cap was applied)", average, 1.0 / average);
+			println!(
+				"{} seconds / {} fps (if no fps cap was applied)",
+				average,
+				1.0 / average
+			);
 		}
-    }
+	}
 
 	thread_pool.join();
 }

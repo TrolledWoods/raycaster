@@ -4,10 +4,12 @@ pub struct Random(u32);
 impl Random {
 	pub fn new() -> Self {
 		use std::time::{SystemTime, UNIX_EPOCH};
-		Random((SystemTime::now()
-			.duration_since(UNIX_EPOCH)
-			.expect("Cannot generate starting seed with epoch").as_nanos() % 0xffff_ffff
-		) as u32)
+		Random(
+			(SystemTime::now()
+				.duration_since(UNIX_EPOCH)
+				.expect("Cannot generate starting seed with epoch")
+				.as_nanos() % 0xffff_ffff) as u32,
+		)
 	}
 
 	pub fn with_seed(seed: u32) -> Self {

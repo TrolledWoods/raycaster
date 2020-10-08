@@ -28,9 +28,10 @@ pub struct Textures {
 impl Textures {
 	pub fn new() -> image::ImageResult<Self> {
 		Ok(Textures {
-			textures: TEXTURE_FILES.iter().map(|&path| {
-				image::open(path).map(|v| v.into_rgba())
-			}).collect::<Result<Vec<_>, image::ImageError>>()?
+			textures: TEXTURE_FILES
+				.iter()
+				.map(|&path| image::open(path).map(|v| v.into_rgba()))
+				.collect::<Result<Vec<_>, image::ImageError>>()?,
 		})
 	}
 

@@ -3,8 +3,8 @@ pub mod generate;
 use std::collections::HashMap;
 use std::num::NonZeroU32;
 
-use crate::Vec2;
 use crate::texture::Texture;
+use crate::Vec2;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EntityId(NonZeroU32);
@@ -32,8 +32,19 @@ impl World {
 		EntityId(id)
 	}
 
-	pub fn insert_sprite(&mut self, texture: Texture, pos: Vec2, size: f32, y_pos: f32) -> SpriteId {
-		let sprite = Sprite { texture, pos, size, y_pos };
+	pub fn insert_sprite(
+		&mut self,
+		texture: Texture,
+		pos: Vec2,
+		size: f32,
+		y_pos: f32,
+	) -> SpriteId {
+		let sprite = Sprite {
+			texture,
+			pos,
+			size,
+			y_pos,
+		};
 
 		let id = self.sprite_id_counter;
 		self.sprite_id_counter = NonZeroU32::new(self.sprite_id_counter.get() + 1).unwrap();
@@ -45,10 +56,12 @@ impl World {
 		let old = self.sprites.insert(id, sprite);
 		assert!(old.is_none());
 
-		for y in (texture_y - size / 2.0).floor() as isize ..=
-				 (texture_y + size / 2.0).floor() as isize {
-			for x in (texture_x - size / 2.0).floor() as isize ..=
-					 (texture_x + size / 2.0).floor() as isize {
+		for y in
+			(texture_y - size / 2.0).floor() as isize..=(texture_y + size / 2.0).floor() as isize
+		{
+			for x in (texture_x - size / 2.0).floor() as isize
+				..=(texture_x + size / 2.0).floor() as isize
+			{
 				if let Some(tile) = self.tiles.get_mut(x, y) {
 					tile.sprites_inside.push(SpriteId(id));
 				}
@@ -59,7 +72,9 @@ impl World {
 	}
 
 	pub fn entities(&self) -> impl Iterator<Item = (EntityId, &Entity)> {
-		self.entities.iter().map(|(&key, value)| (EntityId(key), value))
+		self.entities
+			.iter()
+			.map(|(&key, value)| (EntityId(key), value))
 	}
 
 	pub fn get_entity(&self, id: EntityId) -> Option<&Entity> {
@@ -93,8 +108,8 @@ impl World {
 			if let Some(sprite_id) = entity.sprite {
 				self.tiles.move_sprite(
 					sprite_id,
-					self.sprites.get_mut(&sprite_id.0).unwrap(), 
-					entity.pos
+					self.sprites.get_mut(&sprite_id.0).unwrap(),
+					entity.pos,
 				);
 			}
 		}
@@ -102,8 +117,11 @@ impl World {
 
 	pub fn to_image(&self, file: &str) {
 		use image::{ImageBuffer, Pixel, Rgba};
-		
-		let mut image = ImageBuffer::<Rgba<u8>, Vec<u8>>::new(self.tiles.width as u32, self.tiles.height as u32);
+
+		let mut image = ImageBuffer::<Rgba<u8>, Vec<u8>>::new(
+			self.tiles.width as u32,
+			self.tiles.height as u32,
+		);
 
 		for y in 0..self.tiles.width {
 			for x in 0..self.tiles.height {
@@ -132,26 +150,28 @@ impl TileMap {
 	pub fn move_sprite(&mut self, sprite_id: SpriteId, sprite: &mut Sprite, new_pos: Vec2) {
 		let size = sprite.size;
 
-		let old_top    = (sprite.pos.y - size / 2.0).floor() as isize;
+		let old_top = (sprite.pos.y - size / 2.0).floor() as isize;
 		let old_bottom = (sprite.pos.y + size / 2.0).floor() as isize;
-		let old_left   = (sprite.pos.x - size / 2.0).floor() as isize;
-		let old_right  = (sprite.pos.x + size / 2.0).floor() as isize;
+		let old_left = (sprite.pos.x - size / 2.0).floor() as isize;
+		let old_right = (sprite.pos.x + size / 2.0).floor() as isize;
 
-		let new_top    = (new_pos.y - size / 2.0).floor() as isize;
+		let new_top = (new_pos.y - size / 2.0).floor() as isize;
 		let new_bottom = (new_pos.y + size / 2.0).floor() as isize;
-		let new_left   = (new_pos.x - size / 2.0).floor() as isize;
-		let new_right  = (new_pos.x + size / 2.0).floor() as isize;
+		let new_left = (new_pos.x - size / 2.0).floor() as isize;
+		let new_right = (new_pos.x + size / 2.0).floor() as isize;
 
 		sprite.pos = new_pos;
 
-		if old_top == new_top && old_bottom == new_bottom &&
-			new_left == old_left && old_right == new_right
+		if old_top == new_top
+			&& old_bottom == new_bottom
+			&& new_left == old_left
+			&& old_right == new_right
 		{
 			return;
 		}
 
-		for y in old_top ..= old_bottom {
-			for x in old_left ..= old_right {
+		for y in old_top..=old_bottom {
+			for x in old_left..=old_right {
 				if let Some(tile) = self.get_mut(x, y) {
 					if let Some(loc) = tile.sprites_inside.iter().position(|&v| v == sprite_id) {
 						tile.sprites_inside.swap_remove(loc);
@@ -160,8 +180,8 @@ impl TileMap {
 			}
 		}
 
-		for y in new_top ..= new_bottom {
-			for x in new_left ..= new_right {
+		for y in new_top..=new_bottom {
+			for x in new_left..=new_right {
 				if let Some(tile) = self.get_mut(x, y) {
 					tile.sprites_inside.push(sprite_id);
 				}
@@ -244,8 +264,14 @@ impl Tile {
 	pub fn get_graphics(&self) -> Option<TileGraphics> {
 		match self.kind {
 			TileKind::Floor => None,
-			TileKind::Wall   => Some(TileGraphics { texture: Texture::Wall, is_transparent: false }),
-			TileKind::Window => Some(TileGraphics { texture: Texture::Window, is_transparent: true }),
+			TileKind::Wall => Some(TileGraphics {
+				texture: Texture::Wall,
+				is_transparent: false,
+			}),
+			TileKind::Window => Some(TileGraphics {
+				texture: Texture::Window,
+				is_transparent: true,
+			}),
 		}
 	}
 

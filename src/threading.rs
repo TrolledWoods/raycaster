@@ -1,14 +1,14 @@
-use std::thread::{spawn, sleep, JoinHandle};
-use std::time::Duration;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::thread::{sleep, spawn, JoinHandle};
+use std::time::Duration;
 
-use crate::world::World;
-use crate::texture::Textures;
 use crate::raycast::{raycast, Raycast};
 use crate::render::ImageColumn;
+use crate::texture::Textures;
 use crate::texture::*;
-use crate::{Vec2, Mat2};
+use crate::world::World;
+use crate::{Mat2, Vec2};
 
 // TODO: It's weird to have rendering in the threading file, so,
 // either; make this more generic and move the rendering part somewhere else
@@ -66,7 +66,9 @@ impl ThreadPool {
 						lock.0 += 1;
 						std::mem::drop(lock);
 
-						unsafe { run_work(work, &mut hits, &mut floor_gfx); }
+						unsafe {
+							run_work(work, &mut hits, &mut floor_gfx);
+						}
 
 						let mut lock = shared.work.lock().unwrap();
 						lock.0 -= 1;
@@ -89,9 +91,13 @@ impl ThreadPool {
 
 	pub fn raycast_scene(
 		&mut self,
-		world: &World, textures: &Textures,
-		cam_pos: Vec2, cam_matrix: Mat2,
-		width: usize, height: usize, buffer: &mut [u32],
+		world: &World,
+		textures: &Textures,
+		cam_pos: Vec2,
+		cam_matrix: Mat2,
+		width: usize,
+		height: usize,
+		buffer: &mut [u32],
 		aspect: f32,
 	) {
 		assert_eq!(width * height, buffer.len());
@@ -119,7 +125,9 @@ impl ThreadPool {
 			let value = self.shared.work.lock().unwrap().1.pop();
 			value
 		} {
-			unsafe { run_work(work, &mut self.hit_data_cache, &mut self.floor_gfx_cache); }
+			unsafe {
+				run_work(work, &mut self.hit_data_cache, &mut self.floor_gfx_cache);
+			}
 		}
 
 		// While work is still being performed, wait
@@ -155,7 +163,12 @@ struct FloorGfx {
 
 unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut Vec<FloorGfx>) {
 	let RaycastWork {
-		world, textures, buffer, stride, width, height,
+		world,
+		textures,
+		buffer,
+		stride,
+		width,
+		height,
 		x_offset,
 		cam_matrix,
 		cam_pos,
@@ -176,12 +189,13 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut V
 		floor_gfx.clear();
 
 		let mut prev: Option<FloorGfx> = None;
-		raycast(Raycast {
+		raycast(
+			Raycast {
 				x: cam_pos.x,
 				y: cam_pos.y,
 				dx: offset.x,
 				dy: offset.y,
-				.. Default::default()
+				..Default::default()
 			},
 			|dist, x, y, off_x, off_y, pos| {
 				if let Some(mut prev) = prev.take() {
@@ -205,7 +219,7 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut V
 							Some(graphics) => {
 								hits.push(HitData {
 									dist,
-									uv: off_x + off_y, 
+									uv: off_x + off_y,
 									texture_id: graphics.texture,
 									size: 1.0,
 									y_pos: 0.5,
@@ -217,7 +231,9 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut V
 									let entity = world.get_sprite(sprite_id).unwrap();
 
 									let rel_entity_pos = inv_cam_matrix * (entity.pos() - cam_pos);
-									let hit_x = 0.5 + (rel_entity_pos.x - fx * rel_entity_pos.y) / entity.size();
+									let hit_x = 0.5
+										+ (rel_entity_pos.x - fx * rel_entity_pos.y)
+											/ entity.size();
 									if hit_x >= 0.0 && hit_x < 1.0 {
 										hits.push(HitData {
 											dist: rel_entity_pos.y,
@@ -243,19 +259,27 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut V
 		);
 
 		// Sort the graphics by distance
-		hits.sort_unstable_by(
-			|a, b| a.dist.partial_cmp(&b.dist).unwrap()
-		);
+		hits.sort_unstable_by(|a, b| a.dist.partial_cmp(&b.dist).unwrap());
 
 		let mut column = ImageColumn::from_raw(buffer.add(x), stride, height);
 
-		for &FloorGfx { from_dist, to_dist, texture_id, from_uv, to_uv } in floor_gfx.iter().take(0) {
+		for &FloorGfx {
+			from_dist,
+			to_dist,
+			texture_id,
+			from_uv,
+			to_uv,
+		} in floor_gfx.iter().take(0)
+		{
 			let from_dist_size = 1.0f32 / (0.0000001 + from_dist);
-			let to_dist_size   = 1.0f32 / (0.0000001 + to_dist);
+			let to_dist_size = 1.0f32 / (0.0000001 + to_dist);
 
-			column.draw_uv_row(textures.get(texture_id),
-				to_uv, from_uv,
-				0.5 + to_dist_size * 0.5, 0.5 + from_dist_size * 0.5,
+			column.draw_uv_row(
+				textures.get(texture_id),
+				to_uv,
+				from_uv,
+				0.5 + to_dist_size * 0.5,
+				0.5 + from_dist_size * 0.5,
 				1.0 / (1.0 + from_dist * from_dist * 0.1),
 			);
 		}
@@ -263,9 +287,11 @@ unsafe fn run_work(work: RaycastWork, hits: &mut Vec<HitData>, floor_gfx: &mut V
 		for hit in hits.iter().rev() {
 			let dist_size = 1.0f32 / (0.0000001 + hit.dist);
 			let texture = textures.get(hit.texture_id);
-			column.draw_partial_image(texture, 
+			column.draw_partial_image(
+				texture,
 				((hit.uv * texture.height() as f32) as u32).clamp(0, texture.height() - 1),
-				0.0, 1.0,
+				0.0,
+				1.0,
 				0.5 - dist_size * 0.5 + dist_size * (hit.y_pos * (1.0 - hit.size)),
 				0.5 - dist_size * 0.5 + dist_size * (hit.y_pos * (1.0 - hit.size) + hit.size),
 				1.0 / (1.0 + hit.dist * hit.dist * 0.4),
