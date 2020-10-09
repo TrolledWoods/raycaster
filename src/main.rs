@@ -60,7 +60,7 @@ fn main() {
 
 		let instant = std::time::Instant::now();
 
-		if let Some(player) = world.get_entity_mut(player_id) {
+		if let Some(player) = world.entities.get_mut(player_id) {
 			if window.is_key_down(Key::Right) {
 				player.rot += 5.0 * last_frame_time;
 			}
@@ -87,7 +87,7 @@ fn main() {
 
 		world.simulate_physics(last_frame_time, elapsed_time);
 
-		if let Some(player) = world.get_entity(player_id) {
+		if let Some(player) = world.entities.get(player_id) {
 			cam_pos = player.pos;
 		}
 

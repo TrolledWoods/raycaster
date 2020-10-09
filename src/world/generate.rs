@@ -1,4 +1,4 @@
-use super::{Entity, EntityId, Tile, TileKind, TileMap, World};
+use super::{Entities, Entity, EntityId, Tile, TileKind, TileMap, World};
 use crate::random::Random;
 use crate::texture::Texture;
 use crate::Vec2;
@@ -30,8 +30,9 @@ impl GenTile {
 		}
 	}
 
-	pub fn change_if(&mut self, kind: GenTileKind, dir: Direction) {
+	pub fn change_if(mut self, kind: GenTileKind, dir: Direction) -> Self {
 		self.change_if = Some((kind, dir));
+		self
 	}
 }
 
@@ -222,8 +223,7 @@ impl WorldGenerator {
 			},
 			sprites: HashMap::new(),
 			sprite_id_counter: NonZeroU32::new(1).unwrap(),
-			entities: HashMap::new(),
-			entity_id_counter: NonZeroU32::new(1).unwrap(),
+			entities: Entities::new(),
 		};
 
 		for (room_y, chunk) in rooms.rooms.chunks(self.n_rooms_width).enumerate() {
@@ -254,7 +254,7 @@ impl WorldGenerator {
 										(room_y * ROOM_HEIGHT + tile_y) as f32 + 0.5,
 									);
 									let sprite = world.insert_sprite(Texture::Rick, pos, 1.0, 0.0);
-									world.insert_entity(Entity {
+									world.entities.insert(Entity {
 										move_drag: 0.0,
 										vel: Vec2::new(
 											(random.get_float() - 0.5) * 25.0,
@@ -298,7 +298,7 @@ impl WorldGenerator {
 			}
 		}
 
-		let player_id = world.insert_entity(Entity::new(start, 0.3, None));
+		let player_id = world.entities.insert(Entity::new(start, 0.3, None));
 
 		(player_id, world)
 	}
@@ -584,24 +584,30 @@ fn load_prefabs_from_path(path: &str) -> Result<Vec<RoomPrefab>, &'static str> {
 				let mut body_chars = body.chars();
 				let mut width = 0;
 				while let Some(c) = body_chars.next() {
-					let (mut gen_tile, alternate) = match c {
-						'#' => (GenTile::new(GenTileKind::Wall), GenTileKind::Floor),
-						'o' => (GenTile::new(GenTileKind::Window), GenTileKind::Floor),
-						'.' => (GenTile::new(GenTileKind::Floor), GenTileKind::Floor),
-						'D' => (GenTile::new(GenTileKind::Wall), GenTileKind::Door),
+					let modifier = body_chars.next().ok_or("Expected tile modifier")?;
+					prefab.tiles.push(match (c, modifier) {
+						('#', '#') => GenTile::new(GenTileKind::Wall),
+						('#', '>') => GenTile::new(GenTileKind::Wall)
+							.change_if(GenTileKind::Floor, Direction::Right),
+						('#', '<') => GenTile::new(GenTileKind::Wall)
+							.change_if(GenTileKind::Floor, Direction::Left),
+						('#', '^') => GenTile::new(GenTileKind::Wall)
+							.change_if(GenTileKind::Floor, Direction::Up),
+						('#', 'v') => GenTile::new(GenTileKind::Wall)
+							.change_if(GenTileKind::Floor, Direction::Down),
+						('o', 'o') => GenTile::new(GenTileKind::Window),
+						('.', '.') => GenTile::new(GenTileKind::Floor),
+						('D', 'D') => GenTile::new(GenTileKind::Door),
+						('D', '>') => GenTile::new(GenTileKind::Wall)
+							.change_if(GenTileKind::Door, Direction::Right),
+						('D', '<') => GenTile::new(GenTileKind::Wall)
+							.change_if(GenTileKind::Door, Direction::Left),
+						('D', '^') => GenTile::new(GenTileKind::Wall)
+							.change_if(GenTileKind::Door, Direction::Up),
+						('D', 'v') => GenTile::new(GenTileKind::Wall)
+							.change_if(GenTileKind::Door, Direction::Down),
 						_ => return Err("Invalid tile character"),
-					};
-
-					match body_chars.next().ok_or("Expected tile modifier")? {
-						modifier if modifier == c => (),
-						'>' => gen_tile.change_if(alternate, Direction::Right),
-						'<' => gen_tile.change_if(alternate, Direction::Left),
-						'^' => gen_tile.change_if(alternate, Direction::Up),
-						'v' => gen_tile.change_if(alternate, Direction::Down),
-						_ => return Err("Invalid tile modifier"),
-					}
-
-					prefab.tiles.push(gen_tile);
+					});
 					width += 1;
 				}
 

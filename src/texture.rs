@@ -8,14 +8,6 @@ macro_rules! create_textures {
 			$($name),*
 		}
 
-		impl Texture {
-			pub fn total_animation_time(self) -> f32 {
-				match self {
-					$(Texture::$name => $total_anim_time),*
-				}
-			}
-		}
-
 		const TEXTURE_DATA: &[(f32, &str)] = &[
 			$(($total_anim_time, $file_name)),*
 		];
@@ -145,27 +137,5 @@ impl Animation {
 			start_time,
 			kind: AnimationKind::Clamped,
 		}
-	}
-
-	pub fn new_loop(texture: Texture) -> Self {
-		Animation {
-			texture,
-			start_time: 0.0,
-			speed: 1.0,
-			kind: AnimationKind::Looping,
-		}
-	}
-
-	pub fn new_clamp(texture: Texture) -> Self {
-		Animation {
-			texture,
-			speed: 1.0,
-			start_time: 0.0,
-			kind: AnimationKind::Clamped,
-		}
-	}
-
-	pub fn has_run_once(&self, time: f32) -> bool {
-		time - self.start_time <= self.texture.total_animation_time() / self.speed
 	}
 }

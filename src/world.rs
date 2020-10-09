@@ -1,3 +1,4 @@
+mod entity;
 pub mod generate;
 
 use std::collections::HashMap;
@@ -6,8 +7,7 @@ use std::num::NonZeroU32;
 use crate::texture::*;
 use crate::Vec2;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct EntityId(NonZeroU32);
+pub use entity::{Entities, Entity, EntityId};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SpriteId(NonZeroU32);
@@ -15,23 +15,13 @@ pub struct SpriteId(NonZeroU32);
 pub struct World {
 	pub tiles: TileMap,
 
-	entities: HashMap<NonZeroU32, Entity>,
-	entity_id_counter: NonZeroU32,
+	pub entities: Entities,
 
 	sprites: HashMap<NonZeroU32, Sprite>,
 	sprite_id_counter: NonZeroU32,
 }
 
 impl World {
-	pub fn insert_entity(&mut self, entity: Entity) -> EntityId {
-		let id = self.entity_id_counter;
-		self.entity_id_counter = NonZeroU32::new(self.entity_id_counter.get() + 1).unwrap();
-
-		let old = self.entities.insert(id, entity);
-		assert!(old.is_none());
-		EntityId(id)
-	}
-
 	pub fn insert_sprite(
 		&mut self,
 		texture: Texture,
@@ -71,26 +61,12 @@ impl World {
 		SpriteId(id)
 	}
 
-	pub fn entities(&self) -> impl Iterator<Item = (EntityId, &Entity)> {
-		self.entities
-			.iter()
-			.map(|(&key, value)| (EntityId(key), value))
-	}
-
-	pub fn get_entity(&self, id: EntityId) -> Option<&Entity> {
-		self.entities.get(&id.0)
-	}
-
-	pub fn get_entity_mut(&mut self, id: EntityId) -> Option<&mut Entity> {
-		self.entities.get_mut(&id.0)
-	}
-
 	pub fn get_sprite(&self, id: SpriteId) -> Option<&Sprite> {
 		self.sprites.get(&id.0)
 	}
 
 	pub fn simulate_physics(&mut self, time_step: f32, world_time: f32) {
-		for entity in self.entities.values_mut() {
+		for entity in self.entities.iter_mut() {
 			entity.pos.x += entity.vel.x * time_step;
 			if self.tiles.square_is_colliding(entity.pos, entity.size) {
 				if entity.can_open_doors {
@@ -281,6 +257,7 @@ impl Tile {
 		tile
 	}
 
+	#[allow(unused)]
 	pub fn kind(&self) -> &TileKind {
 		&self.kind
 	}
@@ -342,30 +319,6 @@ impl Sprite {
 	#[inline]
 	pub fn size(&self) -> f32 {
 		self.size
-	}
-}
-
-pub struct Entity {
-	pub pos: Vec2,
-	pub vel: Vec2,
-	pub move_drag: f32,
-	pub rot: f32,
-	pub size: f32,
-	pub sprite: Option<SpriteId>,
-	pub can_open_doors: bool,
-}
-
-impl Entity {
-	pub fn new(pos: Vec2, size: f32, sprite: Option<SpriteId>) -> Self {
-		Entity {
-			pos,
-			vel: Vec2::zero(),
-			move_drag: 1.0,
-			rot: 0.0,
-			size,
-			sprite,
-			can_open_doors: true,
-		}
 	}
 }
 
