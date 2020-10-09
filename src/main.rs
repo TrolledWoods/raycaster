@@ -25,7 +25,7 @@ fn main() {
 			.unwrap()
 			.generate(&mut random, Vec2::one() * 102.5);
 
-	world.to_image("debug_maze.png");
+	world.tiles.to_image("debug_maze.png");
 
 	let mut window = Window::new(
 		"Raycaster",

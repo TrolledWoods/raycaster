@@ -213,14 +213,14 @@ impl WorldGenerator {
 		}
 
 		let mut world = World {
-			tiles: TileMap {
-				width: self.n_rooms_width * ROOM_WIDTH,
-				height: self.n_rooms_height * ROOM_HEIGHT,
-				tiles: vec![
+			tiles: TileMap::new(
+				vec![
 					Tile::new(TileKind::Floor);
 					self.n_rooms_width * self.n_rooms_height * ROOM_WIDTH * ROOM_HEIGHT
 				],
-			},
+				self.n_rooms_width * ROOM_WIDTH,
+				self.n_rooms_height * ROOM_HEIGHT,
+			),
 			sprites: HashMap::new(),
 			sprite_id_counter: NonZeroU32::new(1).unwrap(),
 			entities: Entities::new(),
@@ -285,14 +285,14 @@ impl WorldGenerator {
 							GenTileKind::Window => TileKind::Window,
 						};
 
-						let tile = &mut world.tiles.tiles[(room_y * ROOM_HEIGHT + tile_y)
-							* ROOM_WIDTH * self.n_rooms_width
-							+ (room_x * ROOM_WIDTH + tile_x)];
+						let tile = world
+							.tiles
+							.get_mut_usize(
+								room_x * ROOM_WIDTH + tile_x,
+								room_y * ROOM_HEIGHT + tile_y,
+							)
+							.unwrap();
 						tile.set_kind(kind);
-						tile.graphics.as_mut().map(|graphic| {
-							graphic.texture.start_time = random.get_float() * 2.0;
-							graphic.texture.speed = random.get_float() * 3.0 + 0.5;
-						});
 					}
 				}
 			}
