@@ -27,17 +27,6 @@ D<....................D>
 D<....................D>
 ##DvDv####DvDv####DvDv##
 
--- DoorRoom
-- chance 2.5
-##D^D^####D^D^####D^D^##
-D<DDDDDDDDDDDDDDDDDDDDD>
-D<DDDDDDDDDDDDDDDDDDDDD>
-##DDDDDDDDDDDDDDDDDDDD##
-##DDDDDDDDDDDDDDDDDDDD##
-D<DDDDDDDDDDDDDDDDDDDDD>
-D<DDDDDDDDDDDDDDDDDDDDD>
-##DvDv####DvDv####DvDv##
-
 -- Joels rum
 - chance 0.0
 ................

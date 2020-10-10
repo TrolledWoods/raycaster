@@ -2,6 +2,8 @@
 #![feature(clamp)]
 
 use minifb::{Key, Window, WindowOptions};
+#[macro_use]
+mod id;
 mod alloc;
 mod float_range;
 mod random;

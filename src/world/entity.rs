@@ -1,31 +1,22 @@
 use super::SpriteId;
+use crate::id::{Id, IdMap};
 use crate::Vec2;
-use std::collections::HashMap;
-use std::num::NonZeroU32;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct EntityId(NonZeroU32);
+create_id!(EntityId);
 
 pub struct Entities {
-	entities: HashMap<NonZeroU32, Entity>,
-	entity_id_counter: NonZeroU32,
+	entities: IdMap<EntityId, Entity>,
 }
 
 impl Entities {
 	pub fn new() -> Self {
 		Self {
-			entities: HashMap::new(),
-			entity_id_counter: NonZeroU32::new(1).unwrap(),
+			entities: IdMap::new(),
 		}
 	}
 
 	pub fn insert(&mut self, entity: Entity) -> EntityId {
-		let id = self.entity_id_counter;
-		self.entity_id_counter = NonZeroU32::new(self.entity_id_counter.get() + 1).unwrap();
-
-		let old = self.entities.insert(id, entity);
-		assert!(old.is_none());
-		EntityId(id)
+		self.entities.insert(entity)
 	}
 
 	pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Entity> {
@@ -33,12 +24,21 @@ impl Entities {
 	}
 
 	pub fn get(&self, id: EntityId) -> Option<&Entity> {
-		self.entities.get(&id.0)
+		self.entities.get(id)
 	}
 
 	pub fn get_mut(&mut self, id: EntityId) -> Option<&mut Entity> {
-		self.entities.get_mut(&id.0)
+		self.entities.get_mut(id)
 	}
+}
+
+#[derive(Clone, Copy)]
+pub struct Transform {
+	pub pos: Vec2,
+	pub vel: Vec2,
+	pub drag: f32,
+	pub rot: f32,
+	pub size: f32,
 }
 
 pub struct Entity {
