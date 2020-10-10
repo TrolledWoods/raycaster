@@ -1,9 +1,8 @@
 use super::{Entities, Entity, EntityId, Tile, TileKind, TileMap, World};
+use crate::id::IdMap;
 use crate::random::Random;
 use crate::texture::Texture;
 use crate::Vec2;
-use std::collections::HashMap;
-use std::num::NonZeroU32;
 
 const ROOM_WIDTH: usize = 4;
 const ROOM_HEIGHT: usize = 4;
@@ -221,8 +220,7 @@ impl WorldGenerator {
 				self.n_rooms_width * ROOM_WIDTH,
 				self.n_rooms_height * ROOM_HEIGHT,
 			),
-			sprites: HashMap::new(),
-			sprite_id_counter: NonZeroU32::new(1).unwrap(),
+			sprites: IdMap::new(),
 			entities: Entities::new(),
 		};
 
