@@ -161,6 +161,15 @@ pub struct IdMap<K, V> {
 	id_counter: u32,
 }
 
+impl<K, V> Default for IdMap<K, V> {
+	fn default() -> Self {
+		Self {
+			internal: HashMap::new(),
+			id_counter: 0,
+		}
+	}
+}
+
 impl<K, V> IdMap<K, V>
 where
 	K: Id + Eq + Hash + Copy,

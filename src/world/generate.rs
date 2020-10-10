@@ -1,4 +1,4 @@
-use super::{Entities, Entity, EntityId, Tile, TileKind, TileMap, Transform, World};
+use super::{entity, Entities, Entity, EntityId, Tile, TileKind, TileMap, Transform, World};
 use crate::id::IdMap;
 use crate::random::Random;
 use crate::texture::Texture;
@@ -93,6 +93,7 @@ impl WorldGenerator {
 
 		let total_prefab_chance: f32 = self.prefabs.iter().map(|v| v.chance).sum();
 
+		let mut entities = Vec::new();
 		let mut empty_spots = Vec::new();
 		'main_generator: while !loose_ends.is_empty() {
 			let loose_end_id = random.get_32() as usize % loose_ends.len();
@@ -169,6 +170,16 @@ impl WorldGenerator {
 				}
 			}
 
+			for &(pos, ref entity_kind) in wanted_prefab.entities.iter() {
+				entities.push((
+					pos + Vec2::new(
+						room_x as f32 * ROOM_WIDTH as f32,
+						room_y as f32 * ROOM_HEIGHT as f32,
+					),
+					entity_kind.clone(),
+				));
+			}
+
 			*rooms
 				.get_mut(loose_end.from_x + off_x, loose_end.from_y + off_y)
 				.unwrap()
@@ -220,9 +231,34 @@ impl WorldGenerator {
 				self.n_rooms_width * ROOM_WIDTH,
 				self.n_rooms_height * ROOM_HEIGHT,
 			),
+			random: Random::new(),
 			sprites: IdMap::new(),
 			entities: Entities::new(),
 		};
+
+		eprintln!("Generating {} entities", entities.len());
+		for (pos, entity) in entities {
+			match entity {
+				GenEntity::Evil => {
+					let id = world.entities.insert(Default::default());
+					let sprite_id = world.insert_sprite(Texture::Evil, pos, 0.4, 0.5);
+					world.entities.transforms.insert(
+						id,
+						Transform {
+							pos,
+							drag: 0.4,
+							size: 0.2,
+							sprite: Some(sprite_id),
+							..Default::default()
+						},
+					);
+					world
+						.entities
+						.evil_enemies
+						.insert(id, entity::EvilEnemy::Wander(0.0));
+				}
+			}
+		}
 
 		for (room_y, chunk) in rooms.rooms.chunks(self.n_rooms_width).enumerate() {
 			for (room_x, room) in chunk.iter().enumerate() {
@@ -252,7 +288,7 @@ impl WorldGenerator {
 										(room_y * ROOM_HEIGHT + tile_y) as f32 + 0.5,
 									);
 									let sprite = world.insert_sprite(Texture::Rick, pos, 1.0, 0.0);
-									let entity_id = world.entities.entities.insert(Entity {
+									let entity_id = world.entities.insert(Entity {
 										can_open_doors: false,
 									});
 									world.entities.transforms.insert(
@@ -351,7 +387,13 @@ impl Direction {
 	}
 }
 
+#[derive(Clone)]
+enum GenEntity {
+	Evil,
+}
+
 struct RoomPrefab {
+	entities: Vec<(Vec2, GenEntity)>,
 	chance: f32,
 	tiles: Vec<GenTile>,
 	n_rooms_width: usize,
@@ -551,6 +593,7 @@ fn load_prefabs_from_path(path: &str) -> Result<Vec<RoomPrefab>, &'static str> {
 
 	let mut prefabs = Vec::new();
 	let mut current_prefab: Option<RoomPrefab> = None;
+	let mut y = 0;
 
 	for line in file_contents
 		.lines()
@@ -573,11 +616,13 @@ fn load_prefabs_from_path(path: &str) -> Result<Vec<RoomPrefab>, &'static str> {
 
 				let _name = parts.next().ok_or("Expected name of area");
 				current_prefab = Some(RoomPrefab {
+					entities: Vec::new(),
 					chance: 0.0,
 					tiles: Vec::new(),
 					n_rooms_width: 0,
 					n_rooms_height: 0,
 				});
+				y = 0;
 			}
 			"-" => {
 				let prefab = current_prefab
@@ -601,6 +646,7 @@ fn load_prefabs_from_path(path: &str) -> Result<Vec<RoomPrefab>, &'static str> {
 
 				let mut body_chars = body.chars();
 				let mut width = 0;
+				let mut x = 0;
 				while let Some(c) = body_chars.next() {
 					let modifier = body_chars.next().ok_or("Expected tile modifier")?;
 					prefab.tiles.push(match (c, modifier) {
@@ -615,6 +661,12 @@ fn load_prefabs_from_path(path: &str) -> Result<Vec<RoomPrefab>, &'static str> {
 							.change_if(GenTileKind::Floor, Direction::Down),
 						('o', 'o') => GenTile::new(GenTileKind::Window),
 						('.', '.') => GenTile::new(GenTileKind::Floor),
+						('E', '.') => {
+							prefab
+								.entities
+								.push((Vec2::new(x as f32 + 0.5, y as f32 + 0.5), GenEntity::Evil));
+							GenTile::new(GenTileKind::Floor)
+						}
 						('D', 'D') => GenTile::new(GenTileKind::Door),
 						('D', '>') => GenTile::new(GenTileKind::Wall)
 							.change_if(GenTileKind::Door, Direction::Right),
@@ -627,6 +679,7 @@ fn load_prefabs_from_path(path: &str) -> Result<Vec<RoomPrefab>, &'static str> {
 						_ => return Err("Invalid tile character"),
 					});
 					width += 1;
+					x += 1;
 				}
 
 				if prefab.n_rooms_width == 0 {
@@ -634,6 +687,8 @@ fn load_prefabs_from_path(path: &str) -> Result<Vec<RoomPrefab>, &'static str> {
 				} else if prefab.n_rooms_width * ROOM_WIDTH != width {
 					return Err("Widths don't match");
 				}
+
+				y += 1;
 			}
 		}
 	}

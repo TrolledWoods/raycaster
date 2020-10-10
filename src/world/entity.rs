@@ -5,17 +5,16 @@ use std::collections::HashMap;
 
 create_id!(EntityId);
 
+#[derive(Default)]
 pub struct Entities {
 	pub entities: IdMap<EntityId, Entity>,
 	pub transforms: HashMap<EntityId, Transform>,
+	pub evil_enemies: HashMap<EntityId, EvilEnemy>,
 }
 
 impl Entities {
 	pub fn new() -> Self {
-		Self {
-			entities: IdMap::new(),
-			transforms: HashMap::new(),
-		}
+		Default::default()
 	}
 
 	pub fn insert(&mut self, entity: Entity) -> EntityId {
@@ -36,4 +35,9 @@ pub struct Transform {
 #[derive(Default)]
 pub struct Entity {
 	pub can_open_doors: bool,
+}
+
+pub enum EvilEnemy {
+	Wander(f32),
+	Angry(EntityId),
 }

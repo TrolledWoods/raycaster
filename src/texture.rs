@@ -17,7 +17,7 @@ macro_rules! create_textures {
 create_textures!(
 	Wall = "assets\\wall" 1.0,
 	Window = "assets\\window" 1.0,
-	// Evil = "assets\\evil" 1.0,
+	Evil = "assets\\evil" 1.0,
 	Rick = "assets\\rick" 1.0,
 	Floor = "assets\\floor" 1.0,
 	Fungus = "assets\\fungus" 1.0,
