@@ -179,6 +179,7 @@ where
 		id
 	}
 
+	#[allow(unused)]
 	pub fn values_mut(&mut self) -> impl Iterator<Item = &mut V> {
 		self.internal.values_mut()
 	}

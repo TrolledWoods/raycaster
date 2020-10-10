@@ -5,7 +5,7 @@ mod tiles;
 use crate::id::{Id, IdMap};
 use crate::texture::*;
 use crate::Vec2;
-pub use entity::{Entities, Entity, EntityId};
+pub use entity::{Entities, Entity, EntityId, Transform};
 pub use tiles::{Tile, TileKind, TileMap};
 
 create_id!(SpriteId);
@@ -56,33 +56,33 @@ impl World {
 		self.sprites.get(id)
 	}
 
-	pub fn simulate_physics(&mut self, time_step: f32, world_time: f32) {
-		for entity in self.entities.iter_mut() {
-			entity.pos.x += entity.vel.x * time_step;
-			if self.tiles.square_is_colliding(entity.pos, entity.size) {
-				if entity.can_open_doors {
-					self.tiles.touch_event(entity, world_time);
-				}
-				entity.pos.x -= entity.vel.x * time_step;
-				entity.vel.x *= -1.0;
+	pub fn simulate_physics(&mut self, time_step: f32, _world_time: f32) {
+		for transform in self.entities.transforms.values_mut() {
+			transform.pos.x += transform.vel.x * time_step;
+			if self
+				.tiles
+				.square_is_colliding(transform.pos, transform.size)
+			{
+				transform.pos.x -= transform.vel.x * time_step;
+				transform.vel.x *= -1.0;
 			}
 
-			entity.pos.y += entity.vel.y * time_step;
-			if self.tiles.square_is_colliding(entity.pos, entity.size) {
-				if entity.can_open_doors {
-					self.tiles.touch_event(entity, world_time);
-				}
-				entity.pos.y -= entity.vel.y * time_step;
-				entity.vel.y *= -1.0;
+			transform.pos.y += transform.vel.y * time_step;
+			if self
+				.tiles
+				.square_is_colliding(transform.pos, transform.size)
+			{
+				transform.pos.y -= transform.vel.y * time_step;
+				transform.vel.y *= -1.0;
 			}
 
-			entity.vel -= entity.vel * entity.move_drag * time_step;
+			transform.vel -= transform.vel * transform.drag * time_step;
 
-			if let Some(sprite_id) = entity.sprite {
+			if let Some(sprite_id) = transform.sprite {
 				self.tiles.move_sprite(
 					sprite_id,
 					self.sprites.get_mut(sprite_id).unwrap(),
-					entity.pos,
+					transform.pos,
 				);
 			}
 		}

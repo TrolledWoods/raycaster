@@ -1,4 +1,4 @@
-use super::{Entities, Entity, EntityId, Tile, TileKind, TileMap, World};
+use super::{Entities, Entity, EntityId, Tile, TileKind, TileMap, Transform, World};
 use crate::id::IdMap;
 use crate::random::Random;
 use crate::texture::Texture;
@@ -252,15 +252,23 @@ impl WorldGenerator {
 										(room_y * ROOM_HEIGHT + tile_y) as f32 + 0.5,
 									);
 									let sprite = world.insert_sprite(Texture::Rick, pos, 1.0, 0.0);
-									world.entities.insert(Entity {
-										move_drag: 0.0,
-										vel: Vec2::new(
-											(random.get_float() - 0.5) * 25.0,
-											(random.get_float() - 0.5) * 25.0,
-										),
+									let entity_id = world.entities.entities.insert(Entity {
 										can_open_doors: false,
-										..Entity::new(pos, 0.3, Some(sprite))
 									});
+									world.entities.transforms.insert(
+										entity_id,
+										Transform {
+											drag: 0.0,
+											vel: Vec2::new(
+												(random.get_float() - 0.5) * 25.0,
+												(random.get_float() - 0.5) * 25.0,
+											),
+											pos,
+											size: 0.3,
+											sprite: Some(sprite),
+											..Default::default()
+										},
+									);
 								}
 								for _ in 0..(random.get_float()
 									* random.get_float() * random.get_float()
@@ -296,7 +304,19 @@ impl WorldGenerator {
 			}
 		}
 
-		let player_id = world.entities.insert(Entity::new(start, 0.3, None));
+		let player_id = world.entities.insert(Entity {
+			can_open_doors: true,
+			..Default::default()
+		});
+		world.entities.transforms.insert(
+			player_id,
+			Transform {
+				pos: start,
+				size: 0.2,
+				drag: 1.0,
+				..Default::default()
+			},
+		);
 
 		(player_id, world)
 	}

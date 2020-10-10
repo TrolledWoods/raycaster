@@ -1,4 +1,4 @@
-use super::{Entity, Sprite, SpriteId};
+use super::{Sprite, SpriteId};
 use crate::texture::{Animation, Texture};
 use crate::Vec2;
 
@@ -40,22 +40,6 @@ impl TileMap {
 		}
 
 		image.save(file).unwrap();
-	}
-
-	pub fn touch_event(&mut self, entity: &mut Entity, world_time: f32) {
-		for (x, y) in tiles_in_square(entity.pos, entity.size) {
-			match self.get_mut(x, y) {
-				Some(
-					tile @ Tile {
-						kind: TileKind::Door(false),
-						..
-					},
-				) if entity.can_open_doors => {
-					*tile = Tile::new_with_time(TileKind::Door(true), world_time);
-				}
-				_ => (),
-			}
-		}
 	}
 
 	pub fn move_sprite(&mut self, sprite_id: SpriteId, sprite: &mut Sprite, new_pos: Vec2) {
@@ -219,7 +203,7 @@ impl Tile {
 			TileKind::Floor => false,
 			TileKind::Wall => true,
 			TileKind::Window => true,
-			TileKind::Door(open) => !open,
+			TileKind::Door(_) => false, // !open,
 		}
 	}
 }
