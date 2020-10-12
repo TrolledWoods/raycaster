@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::hash::Hash;
 
 pub trait Id {
-	fn new() -> Self;
-	fn create(value: u32) -> Self;
-	fn get(&self) -> u32;
-	fn count_next(&mut self) -> Self;
+    fn new() -> Self;
+    fn create(value: u32) -> Self;
+    fn get(&self) -> u32;
+    fn count_next(&mut self) -> Self;
 }
 
 macro_rules! create_id {
@@ -72,23 +72,23 @@ macro_rules! create_id {
 #[derive(Debug)]
 pub struct IdVec<T, I>
 where
-	I: Id,
+    I: Id,
 {
-	contents: Vec<T>,
-	_phantom: std::marker::PhantomData<I>,
+    contents: Vec<T>,
+    _phantom: std::marker::PhantomData<I>,
 }
 
 impl<T, I> Clone for IdVec<T, I>
 where
-	T: Clone,
-	I: Id,
+    T: Clone,
+    I: Id,
 {
-	fn clone(&self) -> Self {
-		Self {
-			contents: self.contents.clone(),
-			_phantom: std::marker::PhantomData,
-		}
-	}
+    fn clone(&self) -> Self {
+        Self {
+            contents: self.contents.clone(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
 }
 
 // impl<T, I> Default for IdVec<T, I>
@@ -138,66 +138,66 @@ where
 
 impl<T, I> std::ops::Deref for IdVec<T, I>
 where
-	I: Id,
+    I: Id,
 {
-	type Target = [T];
+    type Target = [T];
 
-	fn deref(&self) -> &Self::Target {
-		&*self.contents
-	}
+    fn deref(&self) -> &Self::Target {
+        &*self.contents
+    }
 }
 
 impl<T, I> std::ops::DerefMut for IdVec<T, I>
 where
-	I: Id,
+    I: Id,
 {
-	fn deref_mut(&mut self) -> &mut Self::Target {
-		&mut *self.contents
-	}
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut *self.contents
+    }
 }
 
 pub struct IdMap<K, V> {
-	internal: HashMap<K, V>,
-	id_counter: u32,
+    internal: HashMap<K, V>,
+    id_counter: u32,
 }
 
 impl<K, V> Default for IdMap<K, V> {
-	fn default() -> Self {
-		Self {
-			internal: HashMap::new(),
-			id_counter: 0,
-		}
-	}
+    fn default() -> Self {
+        Self {
+            internal: HashMap::new(),
+            id_counter: 0,
+        }
+    }
 }
 
 impl<K, V> IdMap<K, V>
 where
-	K: Id + Eq + Hash + Copy,
+    K: Id + Eq + Hash + Copy,
 {
-	pub fn new() -> Self {
-		Self {
-			internal: HashMap::new(),
-			id_counter: 0,
-		}
-	}
+    pub fn new() -> Self {
+        Self {
+            internal: HashMap::new(),
+            id_counter: 0,
+        }
+    }
 
-	pub fn insert(&mut self, value: V) -> K {
-		let id = K::create(self.id_counter);
-		self.id_counter += 1;
-		let _ = self.internal.insert(id, value);
-		id
-	}
+    pub fn insert(&mut self, value: V) -> K {
+        let id = K::create(self.id_counter);
+        self.id_counter += 1;
+        let _ = self.internal.insert(id, value);
+        id
+    }
 
-	#[allow(unused)]
-	pub fn values_mut(&mut self) -> impl Iterator<Item = &mut V> {
-		self.internal.values_mut()
-	}
+    #[allow(unused)]
+    pub fn values_mut(&mut self) -> impl Iterator<Item = &mut V> {
+        self.internal.values_mut()
+    }
 
-	pub fn get(&self, id: K) -> Option<&V> {
-		self.internal.get(&id)
-	}
+    pub fn get(&self, id: K) -> Option<&V> {
+        self.internal.get(&id)
+    }
 
-	pub fn get_mut(&mut self, id: K) -> Option<&mut V> {
-		self.internal.get_mut(&id)
-	}
+    pub fn get_mut(&mut self, id: K) -> Option<&mut V> {
+        self.internal.get_mut(&id)
+    }
 }
