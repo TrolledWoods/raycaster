@@ -39,5 +39,6 @@ pub struct Entity {
 
 pub enum EvilEnemy {
     Wander(f32),
+    #[allow(unused)]
     Angry(EntityId),
 }

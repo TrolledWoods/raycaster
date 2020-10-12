@@ -1,5 +1,5 @@
-use crate::{float_range, Vec2};
-use image::{Pixel, RgbaImage};
+use crate::float_range;
+use crate::texture::VerticalImage;
 use std::marker::PhantomData;
 
 pub struct ImageColumn<'a> {
@@ -22,59 +22,6 @@ impl<'a> ImageColumn<'a> {
         }
     }
 
-    pub fn draw_uv_row(
-        &mut self,
-        image: &RgbaImage,
-        mut uv_start: Vec2,
-        mut uv_end: Vec2,
-        pos_y_start: f32,
-        pos_y_end: f32,
-        dimming: f32,
-    ) {
-        if pos_y_start < 0.0 && pos_y_end < 0.0 {
-            return;
-        }
-
-        let pos_y_start = if pos_y_start < 0.0 {
-            uv_start =
-                Vec2::lerp_unclamped(uv_start, uv_end, -pos_y_start / (pos_y_end - pos_y_start));
-            0.0
-        } else {
-            pos_y_start
-        };
-        let pos_y_end = if pos_y_end > 1.0 {
-            uv_end = Vec2::lerp_unclamped(
-                uv_end,
-                uv_start,
-                (pos_y_end - 1.0) / (pos_y_end - pos_y_start),
-            );
-            1.0
-        } else {
-            pos_y_end
-        };
-
-        let size = (pos_y_end - pos_y_start) * self.height as f32;
-        for index in (pos_y_start * self.height as f32) as usize
-            ..((pos_y_end * self.height as f32) as usize).min(self.height - 1)
-        {
-            let factor = (index as f32 - pos_y_start * self.height as f32) / size;
-            let mut lerped = Vec2::lerp_unclamped(uv_start, uv_end, factor);
-            lerped.x = lerped.x - lerped.x.floor();
-            lerped.y = lerped.y - lerped.y.floor();
-
-            let pix = image.get_pixel(
-                (lerped.x * image.width() as f32) as u32,
-                (lerped.y * image.height() as f32) as u32,
-            );
-            let dimmed = dim_color(pix.channels4(), dimming);
-
-            unsafe {
-                *self.buffer.add(index * self.stride) =
-                    dimmed.0 as u32 * 256 * 256 + dimmed.1 as u32 * 256 + dimmed.2 as u32;
-            }
-        }
-    }
-
     /// Draws a cropped image.
     ///
     /// All the floating point coordinates are normalized between 0 and 1.
@@ -82,8 +29,8 @@ impl<'a> ImageColumn<'a> {
     /// and that pos_y_start is less than pos_y_end.
     pub fn draw_partial_image(
         &mut self,
-        image: &RgbaImage,
-        image_x: u32,
+        image: &VerticalImage,
+        image_x: usize,
         mut crop_y_start: f32,
         mut crop_y_end: f32,
         pos_y_start: f32,
@@ -119,12 +66,13 @@ impl<'a> ImageColumn<'a> {
         let d_pixel = ((pos_y_end - pos_y_start) * self.height as f32)
             / ((crop_y_end - crop_y_start) * image.height() as f32);
         let mut self_y = pos_y_start * self.height as f32;
+        let strip = &image.pixels()[image.height() * image_x..];
         for to_pixel in pixel_iter {
-            let pix = image.get_pixel(image_x, (from_pixel as u32).min(image.height() - 1));
+            let pix = strip[(from_pixel as usize).min(image.height() - 1)];
             let self_y_end = self_y + d_pixel * (to_pixel - from_pixel);
 
-            if pix[3] > 0 {
-                let dimmed = dim_color(pix.channels4(), dimming);
+            if let Some(pix) = pix {
+                let dimmed = dim_color(pix, dimming);
 
                 for buffer_index in self_y as usize..(self_y_end as usize).min(self.height - 1) {
                     unsafe {
@@ -141,11 +89,11 @@ impl<'a> ImageColumn<'a> {
 }
 
 #[inline]
-fn dim_color(color: (u8, u8, u8, u8), dim_factor: f32) -> (u8, u8, u8, u8) {
+fn dim_color(color: [f32; 3], dim_factor: f32) -> (u8, u8, u8, u8) {
     (
-        (color.0 as f32 * dim_factor * dim_factor) as u8,
-        (color.1 as f32 * dim_factor * dim_factor) as u8,
-        (color.2 as f32 * dim_factor) as u8,
-        0,
+        (color[0] * dim_factor * dim_factor) as u8,
+        (color[1] * dim_factor * dim_factor) as u8,
+        (color[2] * dim_factor) as u8,
+        255,
     )
 }

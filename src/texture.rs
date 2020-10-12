@@ -31,9 +31,49 @@ struct TextureInfo {
     fps: f32,
 }
 
+pub struct VerticalImage {
+    width: usize,
+    height: usize,
+    pixels: Vec<Option<[f32; 3]>>,
+}
+
+impl VerticalImage {
+    fn from_image(image: image::RgbaImage) -> Self {
+        use image::Pixel;
+        let mut pixels = Vec::new();
+        for x in 0..image.width() {
+            for y in 0..image.height() {
+                let pixel = image.get_pixel(x, y).channels();
+                if pixel[3] != 0 {
+                    pixels.push(Some([pixel[0] as f32, pixel[1] as f32, pixel[2] as f32]));
+                } else {
+                    pixels.push(None);
+                }
+            }
+        }
+        VerticalImage {
+            pixels,
+            width: image.width() as usize,
+            height: image.height() as usize,
+        }
+    }
+
+    pub fn width(&self) -> usize {
+        self.width
+    }
+
+    pub fn height(&self) -> usize {
+        self.height
+    }
+
+    pub fn pixels(&self) -> &[Option<[f32; 3]>] {
+        &self.pixels
+    }
+}
+
 pub struct Textures {
     textures: Vec<TextureInfo>,
-    images: Vec<image::RgbaImage>,
+    images: Vec<VerticalImage>,
 }
 
 impl Textures {
@@ -54,7 +94,7 @@ impl Textures {
                             if !path.exists() {
                                 break;
                             }
-                            images.push(image::open(&path)?.into_rgba());
+                            images.push(VerticalImage::from_image(image::open(&path)?.into_rgba()));
                             println!(" * {:?}", path);
                             n_animation_frames += 1;
                         }
@@ -75,7 +115,7 @@ impl Textures {
                         let mut path = path.to_path_buf();
                         path.set_extension("png");
                         let id = images.len();
-                        images.push(image::open(&path)?.into_rgba());
+                        images.push(VerticalImage::from_image(image::open(&path)?.into_rgba()));
                         println!("loaded image {:?}", path);
                         Ok(TextureInfo {
                             id,
@@ -90,11 +130,11 @@ impl Textures {
         Ok(Self { textures, images })
     }
 
-    pub fn get(&self, texture: Texture) -> &image::RgbaImage {
+    pub fn get(&self, texture: Texture) -> &VerticalImage {
         &self.images[self.textures[texture as u16 as usize].id]
     }
 
-    pub fn get_anim(&self, animation: &Animation, time: f32) -> &image::RgbaImage {
+    pub fn get_anim(&self, animation: &Animation, time: f32) -> &VerticalImage {
         let texture = &self.textures[animation.texture as u16 as usize];
         let n_frames = (time - animation.start_time) * texture.fps * animation.speed;
 
